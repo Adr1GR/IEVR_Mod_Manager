@@ -13,12 +13,11 @@ namespace IEVRModManager
         {
             get
             {
-                // If running as compiled executable
+                // Prefer executable directory, fallback to base directory
                 if (!string.IsNullOrEmpty(AppDomain.CurrentDomain.BaseDirectory))
                 {
                     return AppDomain.CurrentDomain.BaseDirectory;
                 }
-                // If running from source
                 return AppContext.BaseDirectory;
             }
         }

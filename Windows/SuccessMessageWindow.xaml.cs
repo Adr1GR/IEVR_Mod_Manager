@@ -13,18 +13,18 @@ namespace IEVRModManager.Windows
             Owner = parent;
             MessageTextBlock.Text = message;
             
-            // Mostrar lista de mods si se proporciona
+            // Show mod list if provided
             if (modNames != null && modNames.Any())
             {
                 ModsListControl.ItemsSource = modNames;
             }
             else
             {
-                // Ocultar la lista si no hay mods
+                // Hide list if there are no mods
                 ModsListControl.Visibility = Visibility.Collapsed;
             }
             
-            // Cerrar con Enter o Escape
+            // Close with Enter or Escape key
             KeyDown += (s, e) =>
             {
                 if (e.Key == Key.Enter || e.Key == Key.Escape)
@@ -33,7 +33,6 @@ namespace IEVRModManager.Windows
                 }
             };
             
-            // Focus en el botón OK
             Loaded += (s, e) => Focus();
         }
 

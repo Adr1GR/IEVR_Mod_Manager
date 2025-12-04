@@ -23,7 +23,7 @@ namespace IEVRModManager.Windows
             
             DataContext = _config;
             
-            // Asegurar que los valores iniciales se muestren correctamente
+            // Ensure initial values are displayed correctly
             GamePathTextBox.Text = _config.GamePath ?? string.Empty;
             CfgBinPathTextBox.Text = _config.CfgBinPath ?? string.Empty;
             ViolaCliPathTextBox.Text = _config.ViolaCliPath ?? string.Empty;
@@ -106,7 +106,7 @@ namespace IEVRModManager.Windows
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
-            // Guardar los valores actuales antes de cerrar
+            // Save current values before closing
             _config.GamePath = GamePathTextBox.Text;
             _config.CfgBinPath = CfgBinPathTextBox.Text;
             _config.ViolaCliPath = ViolaCliPathTextBox.Text;

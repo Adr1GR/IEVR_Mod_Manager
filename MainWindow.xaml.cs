@@ -116,7 +116,6 @@ namespace IEVRModManager
 
         private void ModsListView_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            // Handle selection change if needed
         }
 
         private void MoveUp_Click(object sender, RoutedEventArgs e)
@@ -216,7 +215,7 @@ namespace IEVRModManager
                     File.Copy(_config.CfgBinPath, targetCpk, true);
                     Log("CHANGES APPLIED!! No mods selected.", "success");
                     
-                    // Mostrar popup cuando no hay mods
+                    // Show popup when no mods are selected
                     var successWindow = new SuccessMessageWindow(this, "Original game files restored.\nNo mods were active.");
                     successWindow.ShowDialog();
                 }
@@ -225,6 +224,23 @@ namespace IEVRModManager
                     Log($"Error applying changes: {ex.Message}", "error");
                 }
                 return;
+            }
+
+            // Detect file conflicts before merging
+            var conflicts = _modManager.DetectFileConflicts(modEntries);
+            if (conflicts.Count > 0)
+            {
+                var conflictWindow = new ConflictWarningWindow(this, conflicts);
+                var result = conflictWindow.ShowDialog();
+                
+                if (result != true || !conflictWindow.UserChoseContinue)
+                {
+                    // User cancelled the operation
+                    Log("Operation cancelled by user due to file conflicts.", "info");
+                    return;
+                }
+                
+                Log($"Warning: {conflicts.Count} file conflict(s) detected. User chose to continue.", "info");
             }
 
             // Merge mods
@@ -262,8 +278,8 @@ namespace IEVRModManager
                     _viola.CleanupTemp(tmpData);
                     Dispatcher.Invoke(() => Log("MODS APPLIED!!", "success"));
                     
-                    // Obtener nombres de mods aplicados en orden
-                    // Crear un diccionario para búsqueda rápida por nombre de carpeta
+                    // Get applied mod names in order
+                    // Create a dictionary for quick lookup by folder name
                     var modNameMap = _modEntries.ToDictionary(
                         me => Path.GetFullPath(Path.Combine(Config.DefaultModsDir, me.Name)),
                         me => me.DisplayName);
@@ -276,7 +292,7 @@ namespace IEVRModManager
                             : Path.GetFileName(path);
                     }).ToList();
                     
-                    // Mostrar popup de éxito
+                    // Show success popup
                     var modCount = modPaths.Count;
                     var message = modCount == 1 
                         ? "1 Mod Applied Successfully" 
@@ -348,7 +364,7 @@ namespace IEVRModManager
 
         private void Configuration_Click(object sender, RoutedEventArgs e)
         {
-            // Crear una copia de la configuración para la ventana
+            // Create a copy of the configuration for the window
             var configCopy = new AppConfig
             {
                 GamePath = _config.GamePath,
@@ -360,7 +376,7 @@ namespace IEVRModManager
             
             var window = new ConfigPathsWindow(this, configCopy, () =>
             {
-                // Guardar cuando cambia algo
+                // Save when something changes
                 _config.GamePath = configCopy.GamePath;
                 _config.CfgBinPath = configCopy.CfgBinPath;
                 _config.ViolaCliPath = configCopy.ViolaCliPath;
@@ -369,7 +385,7 @@ namespace IEVRModManager
             
             window.ShowDialog();
             
-            // Asegurar que los valores finales se guarden
+            // Ensure final values are saved
             _config.GamePath = configCopy.GamePath;
             _config.CfgBinPath = configCopy.CfgBinPath;
             _config.ViolaCliPath = configCopy.ViolaCliPath;
@@ -403,7 +419,7 @@ namespace IEVRModManager
                 var timestamp = DateTime.Now.ToString("HH:mm:ss");
                 var formattedMessage = $"[{timestamp}] {message}\n";
                 
-                // Limit log size before adding new text
+                // Limit log size to prevent memory issues
                 var lines = LogTextBox.LineCount;
                 if (lines > 1000)
                 {
@@ -411,10 +427,7 @@ namespace IEVRModManager
                     LogTextBox.Text = LogTextBox.Text.Substring(startIndex);
                 }
                 
-                // Append new message
                 LogTextBox.AppendText(formattedMessage);
-                
-                // Scroll to end after text is added
                 LogTextBox.CaretIndex = LogTextBox.Text.Length;
                 LogTextBox.ScrollToEnd();
             });

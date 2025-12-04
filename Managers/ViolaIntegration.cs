@@ -66,7 +66,7 @@ namespace IEVRModManager.Managers
                     return false;
                 }
 
-                // Read output asynchronously
+                // Read output asynchronously to avoid blocking
                 _ = Task.Run(() =>
                 {
                     if (_currentProcess?.StandardOutput != null)
@@ -157,7 +157,7 @@ namespace IEVRModManager.Managers
                 }
                 catch
                 {
-                    // Ignore errors
+                    // Ignore errors when stopping process
                 }
                 _currentProcess = null;
             }

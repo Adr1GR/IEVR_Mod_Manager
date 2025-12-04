@@ -135,6 +135,64 @@ namespace IEVRModManager.Managers
                 .ToList();
         }
 
+        public Dictionary<string, List<string>> DetectFileConflicts(List<ModEntry> modEntries)
+        {
+            var conflicts = new Dictionary<string, List<string>>();
+            var enabledMods = modEntries.Where(me => me.Enabled).ToList();
+
+            if (enabledMods.Count < 2)
+            {
+                // No conflicts if less than 2 mods are enabled
+                return conflicts;
+            }
+
+            // Dictionary to track which mods have each file
+            var fileToModsMap = new Dictionary<string, HashSet<string>>();
+
+            foreach (var mod in enabledMods)
+            {
+                var modDataPath = Path.Combine(mod.FullPath, "data");
+                if (!Directory.Exists(modDataPath))
+                {
+                    continue;
+                }
+
+                // Get all files in the mod's data folder
+                var files = Directory.GetFiles(modDataPath, "*", SearchOption.AllDirectories);
+                
+                foreach (var filePath in files)
+                {
+                    // Get relative path from the data folder
+                    var relativePath = Path.GetRelativePath(modDataPath, filePath);
+                    // Normalize path separators for consistency
+                    relativePath = relativePath.Replace('\\', '/');
+
+                    if (!fileToModsMap.ContainsKey(relativePath))
+                    {
+                        fileToModsMap[relativePath] = new HashSet<string>();
+                    }
+
+                    fileToModsMap[relativePath].Add(mod.DisplayName);
+                }
+            }
+
+            // Find files that are in multiple mods
+            foreach (var kvp in fileToModsMap)
+            {
+                if (kvp.Key.Equals("cpk_list.cfg.bin", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                
+                if (kvp.Value.Count > 1)
+                {
+                    conflicts[kvp.Key] = kvp.Value.OrderBy(m => m).ToList();
+                }
+            }
+
+            return conflicts;
+        }
+
         private class ModMetadata
         {
             public string DisplayName { get; set; } = string.Empty;
