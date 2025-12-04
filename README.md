@@ -2,6 +2,8 @@
 
 A graphical mod manager for **Inazuma Eleven Victory Road** that allows you to easily install, manage, and apply multiple mods to your game.
 
+<img width="1202" height="832" alt="image" src="https://github.com/user-attachments/assets/1d759c98-6222-47bc-aa17-5957d2d4f1c1" />
+
 **Version 1.1** - Features a modern dark theme interface with improved usability.
 
 ## Table of Contents
