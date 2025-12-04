@@ -2,11 +2,11 @@
 
 A graphical mod manager for **Inazuma Eleven Victory Road** that allows you to easily install, manage, and apply multiple mods to your game.
 
-<img width="1202" height="832" alt="image" src="https://github.com/user-attachments/assets/1d759c98-6222-47bc-aa17-5957d2d4f1c1" />
+**Version 1.1** - Features a modern dark theme interface with improved usability.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [For Users](#for-users)
   - [Requirements](#requirements)
@@ -28,16 +28,14 @@ A graphical mod manager for **Inazuma Eleven Victory Road** that allows you to e
 
 ---
 
-## 👥 For Users
+## For Users
 
 ### Requirements
 
-Before using the Mod Manager, make sure you have:
-
-1. **Inazuma Eleven Victory Road** installed on your system
-2. **Viola.CLI-Portable.exe** - Download from [Viola releases](https://github.com/skythebro/Viola/releases/latest)
-3. **cpk_list.cfg.bin** - Download from [cpk_list repository](https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list)
-   - Make sure to download the version matching your game version (e.g., `1_4_1_cpk_list.cfg.bin` for game version 1.4.1)
+- **Inazuma Eleven Victory Road** installed on your system
+- **Viola.CLI-Portable.exe** - Download from [Viola releases](https://github.com/skythebro/Viola/releases/latest)
+- **cpk_list.cfg.bin** - Download from [cpk_list repository](https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list)
+  - Download the version matching your game version (e.g., `1_4_1_cpk_list.cfg.bin` for game version 1.4.1)
 
 ### Installation
 
@@ -47,94 +45,78 @@ Before using the Mod Manager, make sure you have:
 
 ### First Time Setup
 
-When you first launch the Mod Manager, you need to configure the following paths:
+Configure the following paths via the **Configuration** button:
 
-1. Click the **"⚙️ Configuration"** button at the bottom of the window
+- **Game Path**: Select your Inazuma Eleven Victory Road installation folder
+  - Example: `C:\Program Files (x86)\Steam\steamapps\common\INAZUMA ELEVEN Victory Road`
+- **cpk_list.cfg.bin Path**: Select the `cpk_list.cfg.bin` file matching your game version
+- **Viola.CLI-Portable.exe Path**: Select the `Viola.CLI-Portable.exe` executable
 
-2. Configure the following paths:
-   - **Game Path**: Click "Browse" next to "🎮 Game path:" and select your Inazuma Eleven Victory Road installation folder
-     - Example: `C:\Program Files (x86)\Steam\steamapps\common\INAZUMA ELEVEN Victory Road`
-   - **cpk_list.cfg.bin Path**: Click "Browse" next to "📄 cpk_list.cfg.bin:" and select the `cpk_list.cfg.bin` file you downloaded
-     - Make sure this matches your game version!
-   - **Viola.CLI-Portable.exe Path**: Click "Browse" next to "⚙️ Viola.CLI-Portable.exe:" and select the `Viola.CLI-Portable.exe` file you downloaded
-
-3. You can also access download links by clicking the **"📥 Downloads"** button to quickly download required files
-
-These settings are automatically saved and will be remembered for future sessions.
+Access download links via the **Downloads** button. Settings are saved automatically.
 
 ### Using the Mod Manager
 
-#### Mod List
-
 The main window displays all mods found in the `Mods/` folder. Each mod shows:
-- **✓**: Whether the mod is enabled (✓ = enabled, ✗ = disabled)
-- **Mod Name**: Display name of the mod
-- **Version**: Version of the mod
-- **Game Ver.**: Game version the mod is designed for
-- **Author**: Mod creator's name
+- Enabled status (✓ = enabled, ✗ = disabled)
+- Display name
+- Version
+- Game version compatibility
+- Author
 
-#### Basic Operations
+**Operations:**
+- **Enable/Disable**: Double-click a mod row or click the ✓/✗ column
+- **Scan Mods**: Refresh the mod list after adding new mods
+- **Move Up/Down**: Change mod priority (higher priority mods override conflicting files)
+- **Enable All / Disable All**: Quickly toggle all mods
+- **Open Mods Folder**: Open the `Mods/` directory in Windows Explorer
 
-- **Enable/Disable a Mod**: 
-  - Double-click on a mod row, or
-  - Click on the ✓/✗ column (first column) to toggle it on/off
-- **Scan Mods**: Click "🔍 Scan Mods" to refresh the mod list (useful after adding new mods)
-- **Move Up/Down**: Select a mod and use "⬆️ Move Up" or "⬇️ Move Down" to change its priority
-  - Mods higher in the list have higher priority and will override conflicting files from mods below
-- **Enable All / Disable All**: Use "✅ Enable All" or "❌ Disable All" to quickly enable or disable all mods
-- **Open Mods Folder**: Click "📂 Open Mods Folder" to open the `Mods/` folder in Windows Explorer
-
-#### Installing Mods
-
+**Installing Mods:**
 1. Download a mod from a trusted source (e.g., [GameBanana](https://gamebanana.com/mods/games/20069))
-2. Extract the mod folder to the `Mods/` directory (located in the same folder as `IEVRModManager.exe`)
-3. Click "Scan Mods" in the Mod Manager to refresh the list
-4. The new mod should appear in the list
+2. Extract the mod folder to the `Mods/` directory
+3. Click "Scan Mods" to refresh the list
 
 ### Applying Mods
 
-1. Make sure all your desired mods are **enabled** (showing ✓ in the first column)
-2. Arrange mod priority using "⬆️ Move Up" and "⬇️ Move Down" if needed
-3. Click **"✓ Apply Changes"** button
-4. Wait for the process to complete - you can monitor progress in the Activity Log panel at the bottom
-5. When you see "MODS APPLIED!!" in the log and a confirmation popup appears, the mods have been successfully installed
+1. Ensure desired mods are enabled
+2. Arrange mod priority if needed
+3. Click **"Apply Changes"**
+4. Wait for completion (monitor progress in Activity Log)
+5. A confirmation popup will appear when mods are successfully applied
 
-**Important Notes:**
+**Notes:**
 - The Mod Manager merges all enabled mods and applies them to your game's `data` folder
-- If no mods are enabled, it will restore the original `cpk_list.cfg.bin` file
-- Always make sure your game is closed before applying mods
-- The process may take a few minutes depending on the number and size of mods
+- If no mods are enabled, it restores the original `cpk_list.cfg.bin` file
+- Always close the game before applying mods
+- Process duration depends on the number and size of mods
 
 ### Troubleshooting
 
-**Problem: "Invalid game path" error**
-- Make sure you've selected the correct game installation folder
-- The folder should contain a `data` subfolder
+**"Invalid game path" error**
+- Verify the correct game installation folder is selected
+- The folder must contain a `data` subfolder
 
-**Problem: "violacli.exe not found" error**
-- Click the **"📥 Downloads"** button to access download links
-- Download Viola.CLI-Portable.exe from the provided link
-- Make sure you've configured the correct path to the executable in the Configuration window
+**"violacli.exe not found" error**
+- Use the **Downloads** button to access download links
+- Configure the correct path in the Configuration window
 
-**Problem: "Invalid cpk_list.cfg.bin path" error**
-- Click the **"📥 Downloads"** button to access download links
+**"Invalid cpk_list.cfg.bin path" error**
 - Download the correct `cpk_list.cfg.bin` file for your game version
-- Make sure the file path is correct in the Configuration window
+- Verify the file path in the Configuration window
 
-**Problem: Mods not appearing after installation**
-- Click "🔍 Scan Mods" to refresh the list
-- Make sure the mod folder is directly inside the `Mods/` folder, not in a subfolder
-- Check that the mod folder contains a `data` folder
+**Mods not appearing after installation**
+- Click "Scan Mods" to refresh the list
+- Ensure the mod folder is directly inside `Mods/`, not in a subfolder
+- Verify the mod folder contains a `data` folder
 
-**Problem: Game crashes or mods don't work**
-- Verify that the mods are compatible with your game version
+**Game crashes or mods don't work**
+- Verify mod compatibility with your game version
 - Check the mod's `GameVersion` field matches your game version
-- Try disabling mods one by one to identify conflicts
-- Make sure mod priority is set correctly (mods that should override others should be higher in the list)
+- Disable mods one by one to identify conflicts
+- Ensure mod priority is set correctly
 
 ---
 
-## 🛠️ For Mod Developers
+## For Mod Developers
 
 ### Mod Structure
 
@@ -148,31 +130,22 @@ YourModName/
     └── [other game files] (Optional - Any files you want to modify)
 ```
 
-The `data/` folder should mirror the game's `data/` folder structure. For example:
+The `data/` folder should mirror the game's `data/` folder structure:
 - Text files: `data/common/text/[language]/[file].cfg.bin`
 - Textures: `data/dx11/[category]/[file].g4tx`
 - Game parameters: `data/common/property/global_param/[file].cfg.bin`
 
 ### Creating a Mod
 
-1. **Create a mod folder** in the `Mods/` directory
-   - Use a descriptive name (e.g., `MyAwesomeMod`)
-   - Avoid spaces and special characters if possible
-
-2. **Create the `data/` folder** inside your mod folder
-   - This is where all your modded game files will go
-
-3. **Add your modded files** to the `data/` folder, maintaining the same directory structure as the game
-
-4. **Create `mod_data.json`** in the root of your mod folder (see [Mod Metadata](#mod-metadata) below)
-
-5. **Include `cpk_list.cfg.bin`** in your mod's `data/` folder
-   - This file tells the game which CPK files to load
-   - You can copy it from the `cpk_list` repository and modify it if needed
+1. Create a mod folder in the `Mods/` directory (use a descriptive name, avoid spaces)
+2. Create the `data/` folder inside your mod folder
+3. Add your modded files to `data/`, maintaining the same directory structure as the game
+4. Create `mod_data.json` in the root of your mod folder (see [Mod Metadata](#mod-metadata))
+5. Include `cpk_list.cfg.bin` in your mod's `data/` folder (copy from the `cpk_list` repository and modify if needed)
 
 ### Mod Metadata
 
-Create a `mod_data.json` file in your mod's root folder with the following structure:
+Create a `mod_data.json` file in your mod's root folder:
 
 ```json
 {
@@ -184,10 +157,10 @@ Create a `mod_data.json` file in your mod's root folder with the following struc
 ```
 
 **Fields:**
-- **Name** (required): The display name shown in the Mod Manager. If omitted, the folder name will be used.
-- **Author** (optional): Your name or username. Leave empty string `""` if you don't want to specify.
-- **ModVersion** (optional): Version of your mod (e.g., "1.0", "2.3"). Leave empty string `""` if not applicable.
-- **GameVersion** (optional): Game version this mod is designed for (e.g., "1.4.1"). Leave empty string `""` if not version-specific.
+- **Name** (required): Display name shown in the Mod Manager. If omitted, the folder name is used.
+- **Author** (optional): Your name or username. Use empty string `""` if not specified.
+- **ModVersion** (optional): Version of your mod (e.g., "1.0", "2.3"). Use empty string `""` if not applicable.
+- **GameVersion** (optional): Game version this mod is designed for (e.g., "1.4.1"). Use empty string `""` if not version-specific.
 
 **Example:**
 ```json
@@ -202,22 +175,19 @@ Create a `mod_data.json` file in your mod's root folder with the following struc
 ### Mod Priority
 
 Mod priority determines which mod's files take precedence when there are conflicts:
-
 - **Higher priority** = Mods listed higher in the Mod Manager
 - **Lower priority** = Mods listed lower in the Mod Manager
 
-When two mods modify the same file:
-- The mod with **higher priority** (higher in the list) will override the lower priority mod's version
-- Users can reorder mods using "Move Up" and "Move Down" buttons
+When two mods modify the same file, the mod with higher priority (higher in the list) overrides the lower priority mod's version. Users can reorder mods using "Move Up" and "Move Down" buttons.
 
 **Recommendations:**
 - If your mod is meant to override others, document that it should be placed higher in the priority list
-- If your mod is a base/foundation mod, it should typically be lower in priority
-- Consider documenting recommended mod order in your mod's description
+- Base/foundation mods should typically be lower in priority
+- Document recommended mod order in your mod's description
 
 ---
 
-## 💻 For Developers
+## For Developers
 
 ### Development Requirements
 
@@ -228,49 +198,37 @@ When two mods modify the same file:
 
 ### Building the Project
 
-#### From Visual Studio:
+**From Visual Studio:**
 1. Open `IEVRModManager.csproj` in Visual Studio
-2. Select "Build" > "Build Solution" (or press Ctrl+Shift+B)
-3. The executable will be generated in `bin\Debug\net8.0-windows\` or `bin\Release\net8.0-windows\`
+2. Build > Build Solution (Ctrl+Shift+B)
+3. Executable generated in `bin\Debug\net8.0-windows\` or `bin\Release\net8.0-windows\`
 
-#### From command line:
+**From command line:**
 
-**Build in Debug mode:**
 ```bash
+# Debug build
 dotnet build
-```
 
-**Build in Release mode:**
-```bash
+# Release build
 dotnet build -c Release
-```
 
-**Publish for distribution (self-contained):**
-```bash
+# Publish self-contained (single executable, no .NET required)
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
-```
-- Generates a single executable file in: `bin\Release\net8.0-windows\win-x64\publish\`
-- Does not require .NET installed on the user's system
 
-**Publish for distribution (standard):**
-```bash
+# Publish standard (requires .NET Runtime)
 dotnet publish -c Release -r win-x64 --self-contained false
 ```
-- Generates files in: `bin\Release\net8.0-windows\win-x64\publish\`
-- Requires .NET 8.0 Runtime installed on the user's system
 
 ### Running the Project
 
-#### From Visual Studio:
-1. Open `IEVRModManager.csproj` in Visual Studio
-2. Press **F5** or click "Start"
+**From Visual Studio:** Press F5 or click Start
 
-#### From command line:
+**From command line:**
 ```bash
 dotnet run
 ```
 
-#### Run the compiled executable:
+**Run compiled executable:**
 ```bash
 .\bin\Release\net8.0-windows\IEVRModManager.exe
 ```
@@ -280,48 +238,31 @@ dotnet run
 ```
 IEVRModManager/
 ├── IEVRModManager.csproj      # C# project file
-├── App.xaml / App.xaml.cs      # Application entry point (WPF)
+├── App.xaml / App.xaml.cs      # Application entry point
 ├── MainWindow.xaml / .cs       # Main window
 ├── Config.cs                   # Constants and configuration
-│
 ├── Models/                     # Data models
-│   ├── ModEntry.cs            # Mod entry model
-│   └── AppConfig.cs           # Application configuration
-│
+│   ├── ModEntry.cs
+│   └── AppConfig.cs
 ├── Managers/                   # Business logic
-│   ├── ConfigManager.cs       # Configuration management
-│   ├── ModManager.cs          # Mod management
-│   └── ViolaIntegration.cs    # Viola CLI integration
-│
+│   ├── ConfigManager.cs
+│   ├── ModManager.cs
+│   └── ViolaIntegration.cs
 ├── Windows/                    # Secondary windows
-│   ├── ConfigPathsWindow.xaml/.cs    # Configuration window
-│   ├── DownloadsWindow.xaml/.cs      # Downloads window
-│   └── SuccessMessageWindow.xaml/.cs # Success message window
-│
+│   ├── ConfigPathsWindow.xaml/.cs
+│   ├── DownloadsWindow.xaml/.cs
+│   └── SuccessMessageWindow.xaml/.cs
 └── Themes/                     # Styles and themes
-    └── DarkTheme.xaml          # Dark theme
+    └── DarkTheme.xaml
 ```
 
 ### Useful Commands
 
-**Clean build files:**
 ```bash
-dotnet clean
-```
-
-**Restore dependencies:**
-```bash
-dotnet restore
-```
-
-**View project information:**
-```bash
-dotnet --info
-```
-
-**View project references:**
-```bash
-dotnet list package
+dotnet clean          # Clean build files
+dotnet restore        # Restore dependencies
+dotnet --info         # View project information
+dotnet list package   # View project references
 ```
 
 ### Technologies Used
@@ -334,19 +275,19 @@ dotnet list package
 
 ### Development Notes
 
-- The project uses **nullable reference types** (`nullable enable`)
-- Configuration is saved in `config.json` in the application base directory
-- Mods are scanned from the `Mods/` folder in the base directory
-- Temporary files are created in the `tmp/` folder in the base directory
-- The `config.json` format is compatible with previous versions of the project
+- Project uses **nullable reference types** (`nullable enable`)
+- Configuration saved in `config.json` in the application base directory
+- Mods scanned from `Mods/` folder in the base directory
+- Temporary files created in `tmp/` folder in the base directory
+- `config.json` format is compatible with previous versions
 
 ---
 
-## 📝 License
+## License
 
 [Add license information here]
 
-## 🙏 Credits
+## Credits
 
 - Mod Manager created by [Your Name]
 - Uses [Viola](https://github.com/skythebro/Viola) for CPK merging
@@ -354,9 +295,9 @@ dotnet list package
 
 ---
 
-## 📞 Support
+## Support
 
-If you encounter issues or have questions:
+If you encounter issues:
 - Check the troubleshooting section above
 - Review the log output in the Mod Manager for error messages
 - Ensure all requirements are properly installed and configured
