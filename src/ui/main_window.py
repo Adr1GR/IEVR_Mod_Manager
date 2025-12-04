@@ -16,6 +16,8 @@ from .mods_panel import ModsPanel
 from .log_panel import LogPanel
 from .downloads_window import DownloadsWindow
 from .config_paths_window import ConfigPathsWindow
+from .theme import Theme
+from .window_utils import center_window
 
 
 class MainWindow(tk.Tk):
@@ -29,15 +31,10 @@ class MainWindow(tk.Tk):
         self.minsize(*WINDOW_MIN_SIZE)
         
         # Set window background color immediately
-        self.configure(bg="#f5f5f5")
+        self.configure(bg=Theme.BG_COLOR)
         
         # Center window on screen
-        self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
-        x = (self.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-        self.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(self)
         
         # Managers
         self.config_manager = ConfigManager()
@@ -71,138 +68,49 @@ class MainWindow(tk.Tk):
     
     def _build_ui(self):
         """Build the user interface."""
-        self.style = ttk.Style(self)
-        self.style.theme_use("clam")
-        
-        # Modern color scheme
-        self.bg_color = "#f5f5f5"
-        self.accent_color = "#0078d4"
-        self.accent_hover = "#005a9e"
-        self.success_color = "#107c10"
-        self.text_color = "#323130"
-        self.border_color = "#d2d0ce"
-        
-        # Configure window background
-        self.configure(bg=self.bg_color)
-        
-        # Configure styles
-        self.style.configure("Accent.TButton", 
-                           foreground="white", 
-                           background=self.accent_color, 
-                           font=("Segoe UI", 10, "bold"),
-                           padding=10,
-                           borderwidth=0,
-                           focuscolor="none")
-        self.style.map("Accent.TButton",
-                      background=[("active", self.accent_hover), ("pressed", "#004578")],
-                      foreground=[("disabled", "#ccc")])
-        
-        self.style.configure("Primary.TButton",
-                           foreground=self.text_color,
-                           background=self.bg_color,
-                           font=("Segoe UI", 9),
-                           padding=8,
-                           borderwidth=1,
-                           relief="solid")
-        self.style.map("Primary.TButton",
-                      background=[("active", "#e8e8e8")],
-                      bordercolor=[("active", self.accent_color)])
-        
-        self.style.configure("Treeview", 
-                           rowheight=32, 
-                           font=("Segoe UI", 10),
-                           background=self.bg_color,
-                           fieldbackground=self.bg_color,
-                           foreground=self.text_color,
-                           borderwidth=1,
-                           relief="solid")
-        self.style.configure("Treeview.Heading", 
-                           font=("Segoe UI", 10, "bold"),
-                           background=self.bg_color,
-                           foreground=self.text_color,
-                           borderwidth=1,
-                           relief="solid")
-        self.style.map("Treeview",
-                      background=[("selected", "#e1dfdd")])
-        # Don't set foreground for selected state - let tags handle it
-        # Tags with foreground colors will override selection foreground
-        
-        # Configure LabelFrame with explicit background
-        self.style.configure("TLabelFrame",
-                           background=self.bg_color,
-                           foreground=self.text_color,
-                           font=("Segoe UI", 10, "bold"),
-                           borderwidth=2,
-                           relief="solid",
-                           bordercolor=self.border_color,
-                           lightcolor=self.bg_color,
-                           darkcolor=self.bg_color)
-        self.style.configure("TLabelFrame.Label",
-                           background=self.bg_color,
-                           foreground=self.text_color,
-                           font=("Segoe UI", 10, "bold"))
-        self.style.map("TLabelFrame",
-                      background=[("active", self.bg_color), 
-                                 ("disabled", self.bg_color),
-                                 ("!disabled", self.bg_color),
-                                 ("", self.bg_color)])
-        
-        # Configure Frame with explicit background
-        self.style.configure("TFrame",
-                           background=self.bg_color,
-                           borderwidth=0)
-        self.style.map("TFrame",
-                      background=[("active", self.bg_color), 
-                                ("disabled", self.bg_color),
-                                ("!disabled", self.bg_color),
-                                ("", self.bg_color)])
-        
-        self.style.configure("TScrollbar",
-                           background=self.bg_color,
-                           troughcolor=self.bg_color,
-                           borderwidth=1,
-                           arrowcolor=self.text_color,
-                           darkcolor=self.border_color,
-                           lightcolor=self.border_color)
-        self.style.map("TScrollbar",
-                      background=[("active", "#e1dfdd")])
-        
-        self.style.configure("TEntry",
-                           fieldbackground=self.bg_color,
-                           foreground=self.text_color,
-                           borderwidth=1,
-                           relief="solid",
-                           padding=4,
-                           font=("Segoe UI", 9))
-        self.style.map("TEntry",
-                      bordercolor=[("focus", self.accent_color)])
-        
-        self.style.configure("TLabel",
-                           background=self.bg_color,
-                           foreground=self.text_color,
-                           font=("Segoe UI", 9))
+        # Configure ttk styles using Theme manager
+        self.style = Theme.configure_style(self)
         
         # Grid configuration for responsiveness
-        # Row 0: Center frame (expandable, minimum height) - mods list
-        # Row 1: Log panel (fixed size, but can shrink)
-        # Row 2: Bottom frame (fixed size) - buttons
-        self.grid_rowconfigure(0, weight=1, minsize=450)  # Center section - expandable with larger minimum
-        self.grid_rowconfigure(1, weight=0, minsize=150)  # Log panel - fixed but can shrink
-        self.grid_rowconfigure(2, weight=0)  # Bottom section
+        # Row 0: Title
+        # Row 1: Center frame (expandable, minimum height) - mods list
+        # Row 2: Log panel (fixed size, but can shrink)
+        # Row 3: Bottom frame (fixed size) - buttons
+        self.grid_rowconfigure(0, weight=0)  # Title - fixed size
+        self.grid_rowconfigure(1, weight=1, minsize=450)  # Center section - expandable with larger minimum
+        self.grid_rowconfigure(2, weight=0, minsize=150)  # Log panel - fixed but can shrink
+        self.grid_rowconfigure(3, weight=0)  # Bottom section
         self.grid_columnconfigure(0, weight=1)
         
-        # Center frame (mods and controls) - moved to top
+        # Title at the top
+        self._build_title()
+        
+        # Center frame (mods and controls)
         self._build_center_frame()
         
         # Log panel - fixed height to prevent it from taking too much space
         self.log_panel = LogPanel(self)
-        self.log_panel.frame.grid(row=1, column=0, sticky="ew", padx=12, pady=(8, 12))
+        self.log_panel.frame.grid(row=2, column=0, sticky="ew", padx=12, pady=(8, 12))
         
-        # Bottom frame (buttons: Downloads, Configuration Paths, Exit)
+        # Bottom frame (buttons: Downloads, Configuration, Exit)
         self._build_bottom_frame()
         
         # Force background color application after all widgets are created
         self._apply_background_colors()
+    
+    def _build_title(self):
+        """Build the title label at the top."""
+        title_frame = tk.Frame(self, bg=Theme.BG_COLOR)
+        title_frame.grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 8))
+        
+        title_label = tk.Label(
+            title_frame,
+            text="IE:VR Mod Manager 1.1",
+            font=(Theme.FONT_FAMILY, 18, "bold"),
+            bg=Theme.BG_COLOR,
+            fg=Theme.TEXT_COLOR
+        )
+        title_label.pack()
     
     
     def _open_downloads_window(self):
@@ -222,20 +130,20 @@ class MainWindow(tk.Tk):
     
     def _build_center_frame(self):
         """Build the center frame with mods list and controls."""
-        frm_center = ttk.Frame(self, padding=12)
-        frm_center.grid(row=0, column=0, sticky="nsew", padx=12, pady=(12, 8))
+        frm_center = tk.Frame(self, bg=Theme.BG_COLOR, padx=12, pady=12)
+        frm_center.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 8))
         # Ensure center frame expands and contracts properly
         frm_center.grid_rowconfigure(0, weight=1, minsize=200)
         frm_center.grid_columnconfigure(0, weight=3, minsize=400)
         frm_center.grid_columnconfigure(1, weight=1, minsize=180)
         
         # Mods panel (left)
-        frm_mods_apply = ttk.Frame(frm_center)
+        frm_mods_apply = tk.Frame(frm_center, bg=Theme.BG_COLOR)
         frm_mods_apply.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         frm_mods_apply.grid_rowconfigure(0, weight=1)
         frm_mods_apply.grid_columnconfigure(0, weight=1)
         
-        mods_frame = ttk.Frame(frm_mods_apply)
+        mods_frame = tk.Frame(frm_mods_apply, bg=Theme.BG_COLOR)
         mods_frame.grid(row=0, column=0, sticky="nsew")
         mods_frame.grid_rowconfigure(0, weight=1)
         mods_frame.grid_columnconfigure(0, weight=1)
@@ -244,7 +152,7 @@ class MainWindow(tk.Tk):
         self.mods_panel.frame.grid(row=0, column=0, sticky="nsew")
         
         # Quick action buttons between mods table and apply button
-        quick_actions_frame = ttk.Frame(frm_mods_apply)
+        quick_actions_frame = tk.Frame(frm_mods_apply, bg=Theme.BG_COLOR)
         quick_actions_frame.grid(row=1, column=0, sticky="ew", pady=(8, 8))
         quick_actions_frame.grid_columnconfigure(0, weight=1)
         quick_actions_frame.grid_columnconfigure(1, weight=1)
@@ -266,10 +174,10 @@ class MainWindow(tk.Tk):
         apply_btn.bind("<Leave>", lambda e: apply_btn.config(cursor=""))
         
         # Controls panel (right) - Mod management actions
-        ctrl_frame = ttk.LabelFrame(frm_center, text="⚡ Mod Actions", padding=10)
-        ctrl_frame.grid(row=0, column=1, sticky="nsew")  # Changed to nsew for responsiveness
+        ctrl_frame = ttk.LabelFrame(frm_center, text="Mod Actions", padding=10)
+        ctrl_frame.grid(row=0, column=1, sticky="nsew")
         ctrl_frame.columnconfigure(0, weight=1)
-        ctrl_frame.grid_rowconfigure(0, weight=0, minsize=50)  # Ensure minimum space
+        ctrl_frame.grid_rowconfigure(0, weight=0, minsize=50)
         
         # Group buttons visually - only mod management buttons here
         buttons_group1 = [
@@ -300,9 +208,9 @@ class MainWindow(tk.Tk):
         ctrl_frame.grid_rowconfigure(row_idx, weight=1)
     
     def _build_bottom_frame(self):
-        """Build the bottom frame with Downloads, Configuration Paths, and Exit buttons."""
-        frm_bottom = ttk.Frame(self, padding=12)
-        frm_bottom.grid(row=2, column=0, sticky="ew", padx=12, pady=(0, 12))
+        """Build the bottom frame with Downloads, Configuration, and Exit buttons."""
+        frm_bottom = tk.Frame(self, bg=Theme.BG_COLOR, padx=12, pady=12)
+        frm_bottom.grid(row=3, column=0, sticky="ew", padx=12, pady=(0, 12))
         frm_bottom.grid_columnconfigure(2, weight=1)  # Expand middle column to push Exit to right
         
         # Downloads button (left side)
@@ -315,10 +223,10 @@ class MainWindow(tk.Tk):
         )
         downloads_btn.grid(row=0, column=0, sticky="w", padx=(0, 6))
         
-        # Configuration Paths button (left side)
+        # Configuration button (left side)
         config_btn = ttk.Button(
             frm_bottom,
-            text="⚙️ Configuration Paths",
+            text="⚙️ Configuration",
             command=self._open_config_paths_window,
             style="Primary.TButton",
             width=20
@@ -332,80 +240,65 @@ class MainWindow(tk.Tk):
     
     def _apply_background_colors(self):
         """Force application of background colors to all widgets."""
-        def apply_bg_recursive(widget):
-            """Recursively apply background color to widget and children."""
-            try:
-                # Apply to tkinter widgets directly
-                if isinstance(widget, (tk.Frame, tk.Label, tk.Button)):
-                    if isinstance(widget, tk.Frame):
-                        widget.configure(bg=self.bg_color, highlightthickness=0)
-                    elif isinstance(widget, tk.Label):
-                        # Only apply if it's not a link (links have their own color)
-                        if widget.cget("cursor") != "hand2":
-                            widget.configure(bg=self.bg_color, highlightthickness=0)
-                
-                # For ttk widgets, try to configure background via style
-                elif isinstance(widget, (ttk.Frame, ttk.LabelFrame)):
-                    try:
-                        # Create a unique style name for this widget type
-                        widget_type = type(widget).__name__
-                        style_name = f"{widget_type}.TFrame" if widget_type == "Frame" else f"{widget_type}"
-                        if not self.style.lookup(style_name, "background"):
-                            self.style.configure(style_name, background=self.bg_color)
-                            widget.configure(style=style_name)
-                    except:
-                        pass
-            except Exception:
-                pass
-            
-            # Recursively apply to children
-            try:
-                for child in widget.winfo_children():
-                    apply_bg_recursive(child)
-            except Exception:
-                pass
-        
         # Update styles first - ensure all ttk styles have background
         self.update_idletasks()
         
-        # Configure all ttk styles with background color - force refresh
-        try:
-            # Re-configure base styles to ensure they're applied
-            self.style.configure("TFrame", 
-                               background=self.bg_color,
-                               borderwidth=0)
-            self.style.configure("TLabelFrame", 
-                               background=self.bg_color,
-                               lightcolor=self.bg_color,
-                               darkcolor=self.bg_color)
-            self.style.configure("TLabelFrame.Label", 
-                               background=self.bg_color)
-            self.style.configure("TLabel", 
-                               background=self.bg_color)
-            self.style.configure("TSeparator", 
-                               background=self.border_color)
-            
-            # Force map all states to use background color
-            self.style.map("TLabelFrame",
-                         background=[("active", self.bg_color), 
-                                   ("disabled", self.bg_color),
-                                   ("!disabled", self.bg_color),
-                                   ("", self.bg_color)],
-                         lightcolor=[("", self.bg_color)],
-                         darkcolor=[("", self.bg_color)])
-            self.style.map("TFrame",
-                         background=[("active", self.bg_color), 
-                                   ("disabled", self.bg_color),
-                                   ("!disabled", self.bg_color),
-                                   ("", self.bg_color)])
-        except Exception as e:
-            print(f"Error configuring styles: {e}")
+        # Re-configure styles to ensure they're applied
+        Theme._configure_frame_style(self.style)
+        Theme._configure_labelframe_style(self.style)
+        Theme._configure_label_style(self.style)
         
-        # Apply background to all tkinter widgets recursively
-        apply_bg_recursive(self)
+        # Configure separator
+        Theme._safe_configure(self.style, "TSeparator", background=Theme.BORDER_COLOR)
+        
+        # Refresh style mappings to ensure dark theme
+        Theme.refresh_style_mappings(self.style)
+        
+        # Apply background to all widgets recursively (both tk and ttk)
+        Theme.apply_background_colors(self, style=self.style)
         
         # Force update after applying colors
         self.update_idletasks()
+        
+        # Additional pass: explicitly configure LabelFrame widgets
+        # Use after_idle to ensure this runs after all widgets are fully rendered
+        self.after_idle(self._force_labelframe_styles)
+    
+    def _force_labelframe_styles(self):
+        """Force LabelFrame widgets to use dark theme."""
+        from tkinter import ttk
+        
+        def apply_style_safe(widget, style_name):
+            """Safely apply style to widget."""
+            try:
+                widget.configure(style=style_name)
+                return True
+            except Exception:
+                return False
+        
+        def configure_widgets(widget):
+            """Recursively configure ttk widgets with styles."""
+            if isinstance(widget, ttk.LabelFrame):
+                apply_style_safe(widget, "TLabelFrame")
+                # Configure child frames
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Frame):
+                        apply_style_safe(child, "TFrame")
+            elif isinstance(widget, ttk.Frame):
+                apply_style_safe(widget, "TFrame")
+            
+            # Recursively process children
+            try:
+                for child in widget.winfo_children():
+                    configure_widgets(child)
+            except Exception:
+                pass
+        
+        configure_widgets(self)
+        self.update_idletasks()
+        
+        # One more pass after a short delay to catch any widgets created later
+        self.after(100, lambda: configure_widgets(self))
     
     def _setup_callbacks(self):
         """Setup trace callbacks for auto-saving."""
@@ -548,7 +441,7 @@ class MainWindow(tk.Tk):
             try:
                 os.makedirs(os.path.dirname(target_cpk), exist_ok=True)
                 shutil.copy2(cfgbin, target_cpk)
-                self._log("CHANGES APPLIED!!. No mods selected.", "success")
+                self._log("CHANGES APPLIED!! No mods selected.", "success")
             except Exception as e:
                 self._log(f"Error applying changes: {e}", "error")
             return

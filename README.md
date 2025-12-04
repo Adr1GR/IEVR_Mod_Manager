@@ -2,6 +2,8 @@
 
 A graphical mod manager for **Inazuma Eleven Victory Road** that allows you to easily install, manage, and apply multiple mods to your game.
 
+**Version 1.1** - Features a modern dark theme interface with improved usability.
+
 ## Table of Contents
 
 - [For Users](#for-users)
@@ -40,13 +42,16 @@ Before using the Mod Manager, make sure you have:
 
 When you first launch the Mod Manager, you need to configure the following paths:
 
-1. **Game Path**: Click "Browse" next to "Game path:" and select your Inazuma Eleven Victory Road installation folder
-   - Example: `C:\Program Files (x86)\Steam\steamapps\common\INAZUMA ELEVEN Victory Road`
+1. Click the **"⚙️ Configuration"** button at the bottom of the window to open the Configuration window
 
-2. **cpk_list.cfg.bin Path**: Click "Browse" next to "cpk_list.cfg.bin path:" and select the `cpk_list.cfg.bin` file you downloaded
-   - Make sure this matches your game version!
+2. Configure the following paths:
+   - **Game Path**: Click "Browse" next to "🎮 Game path:" and select your Inazuma Eleven Victory Road installation folder
+     - Example: `C:\Program Files (x86)\Steam\steamapps\common\INAZUMA ELEVEN Victory Road`
+   - **cpk_list.cfg.bin Path**: Click "Browse" next to "📄 cpk_list.cfg.bin:" and select the `cpk_list.cfg.bin` file you downloaded
+     - Make sure this matches your game version!
+   - **Viola.CLI-Portable.exe Path**: Click "Browse" next to "⚙️ Viola.CLI-Portable.exe:" and select the `Viola.CLI-Portable.exe` file you downloaded
 
-3. **Viola.CLI-Portable.exe Path**: Click "Browse" next to "Viola.CLI-Portable.exe path:" and select the `Viola.CLI-Portable.exe` file you downloaded
+3. You can also access download links by clicking the **"📥 Downloads"** button to quickly download required files
 
 These settings are automatically saved and will be remembered for future sessions.
 
@@ -55,20 +60,22 @@ These settings are automatically saved and will be remembered for future session
 #### Mod List
 
 The main window displays all mods found in the `Mods/` folder. Each mod shows:
-- **Enabled**: Whether the mod is active (Yes/No)
-- **Name**: Display name of the mod
-- **Mod Version**: Version of the mod
-- **Game Version**: Game version the mod is designed for
+- **✓**: Whether the mod is enabled (✓ = enabled, ✗ = disabled)
+- **Mod Name**: Display name of the mod
+- **Version**: Version of the mod
+- **Game Ver.**: Game version the mod is designed for
 - **Author**: Mod creator's name
 
 #### Basic Operations
 
-- **Enable/Disable a Mod**: Double-click on a mod row to toggle it on/off
-- **Scan Mods**: Click "Scan Mods" to refresh the mod list (useful after adding new mods)
-- **Move Up/Down**: Select a mod and use "Move Up" or "Move Down" to change its priority
+- **Enable/Disable a Mod**: 
+  - Double-click on a mod row, or
+  - Click on the ✓/✗ column (first column) to toggle it on/off
+- **Scan Mods**: Click "🔍 Scan Mods" to refresh the mod list (useful after adding new mods)
+- **Move Up/Down**: Select a mod and use "⬆️ Move Up" or "⬇️ Move Down" to change its priority
   - Mods higher in the list have higher priority and will override conflicting files from mods below
-- **Enable All / Disable All**: Quickly enable or disable all mods
-- **Open Mods Folder**: Opens the `Mods/` folder in Windows Explorer
+- **Enable All / Disable All**: Use "✅ Enable All" or "❌ Disable All" to quickly enable or disable all mods
+- **Open Mods Folder**: Click "📂 Open Mods Folder" to open the `Mods/` folder in Windows Explorer
 
 #### Installing Mods
 
@@ -79,10 +86,10 @@ The main window displays all mods found in the `Mods/` folder. Each mod shows:
 
 ### Applying Mods
 
-1. Make sure all your desired mods are **enabled** (showing "Yes" in the Enabled column)
-2. Arrange mod priority using "Move Up" and "Move Down" if needed
-3. Click **"Apply Changes"** button
-4. Wait for the process to complete - you can monitor progress in the Log panel at the bottom
+1. Make sure all your desired mods are **enabled** (showing ✓ in the first column)
+2. Arrange mod priority using "⬆️ Move Up" and "⬇️ Move Down" if needed
+3. Click **"✓ Apply Changes"** button
+4. Wait for the process to complete - you can monitor progress in the Activity Log panel at the bottom
 5. When you see "MODS APPLIED!!" in the log, the mods have been successfully installed
 
 **Important Notes:**
@@ -98,15 +105,17 @@ The main window displays all mods found in the `Mods/` folder. Each mod shows:
 - The folder should contain a `data` subfolder
 
 **Problem: "violacli.exe not found" error**
-- Download Viola.CLI-Portable.exe from the link in the Mod Manager
-- Make sure you've configured the correct path to the executable
+- Click the **"📥 Downloads"** button to access download links
+- Download Viola.CLI-Portable.exe from the provided link
+- Make sure you've configured the correct path to the executable in the Configuration window
 
 **Problem: "Invalid cpk_list.cfg.bin path" error**
+- Click the **"📥 Downloads"** button to access download links
 - Download the correct `cpk_list.cfg.bin` file for your game version
-- Make sure the file path is correct
+- Make sure the file path is correct in the Configuration window
 
 **Problem: Mods not appearing after installation**
-- Click "Scan Mods" to refresh the list
+- Click "🔍 Scan Mods" to refresh the list
 - Make sure the mod folder is directly inside the `Mods/` folder, not in a subfolder
 - Check that the mod folder contains a `data` folder
 

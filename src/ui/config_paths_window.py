@@ -3,9 +3,11 @@ import os
 import tkinter as tk
 from tkinter import ttk, filedialog
 from ..config import DEFAULT_TMP_DIR
+from .base_window import BaseWindow
+from .theme import Theme
 
 
-class ConfigPathsWindow(tk.Toplevel):
+class ConfigPathsWindow(BaseWindow):
     """Window for managing configuration paths."""
     
     def __init__(self, parent, game_path_var, cfgbin_path_var, violacli_path_var, tmp_dir_var, save_callback):
@@ -20,10 +22,7 @@ class ConfigPathsWindow(tk.Toplevel):
             tmp_dir_var: StringVar for tmp directory
             save_callback: Callback function to save configuration
         """
-        super().__init__(parent)
-        self.title("⚙️ Configuration Paths")
-        self.geometry("800x400")
-        self.resizable(False, False)
+        super().__init__(parent, "Configuration", "800x400")
         
         # Store references
         self.game_path_var = game_path_var
@@ -32,68 +31,20 @@ class ConfigPathsWindow(tk.Toplevel):
         self.tmp_dir_var = tmp_dir_var
         self.save_callback = save_callback
         
-        # Center window on screen
-        self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
-        x = (self.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.winfo_screenheight() // 2) - (height // 2)
-        self.geometry(f"{width}x{height}+{x}+{y}")
-        
-        # Configure window background
-        self.bg_color = "#f5f5f5"
-        self.accent_color = "#0078d4"
-        self.text_color = "#323130"
-        self.border_color = "#d2d0ce"
-        self.configure(bg=self.bg_color)
-        
-        # Configure styles
-        self.style = ttk.Style(self)
-        self.style.theme_use("clam")
-        self.style.configure("TFrame", background=self.bg_color)
-        self.style.configure("TLabel", background=self.bg_color, foreground=self.text_color)
-        self.style.configure("TEntry",
-                           fieldbackground=self.bg_color,
-                           foreground=self.text_color,
-                           borderwidth=1,
-                           relief="solid",
-                           padding=4,
-                           font=("Segoe UI", 9))
-        self.style.map("TEntry",
-                      bordercolor=[("focus", self.accent_color)])
-        self.style.configure("Primary.TButton",
-                           foreground=self.text_color,
-                           background=self.bg_color,
-                           font=("Segoe UI", 9),
-                           padding=8,
-                           borderwidth=1,
-                           relief="solid")
-        self.style.map("Primary.TButton",
-                      background=[("active", "#e8e8e8")],
-                      bordercolor=[("active", self.accent_color)])
-        
         # Main frame
-        main_frame = ttk.Frame(self, padding=20)
-        main_frame.pack(fill="both", expand=True)
+        main_frame = self.create_main_frame()
         main_frame.columnconfigure(1, weight=1)
         
         # Title
-        title_label = tk.Label(
-            main_frame,
-            text="⚙️ Configuration Paths",
-            font=("Segoe UI", 14, "bold"),
-            bg=self.bg_color,
-            fg=self.text_color
-        )
-        title_label.grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+        self.create_title_label(main_frame, "Configuration", columnspan=3, pady=(0, 10))
         
         # Info label about auto-save
         info_label = tk.Label(
             main_frame,
-            text="💾 Configuration is saved automatically",
-            font=("Segoe UI", 8, "italic"),
-            fg="#666666",
-            bg=self.bg_color,
+            text="Configuration is saved automatically",
+            font=(Theme.FONT_FAMILY, 8, "italic"),
+            fg=Theme.TIMESTAMP_COLOR,
+            bg=Theme.BG_COLOR,
             anchor="w",
             highlightthickness=0
         )
@@ -103,7 +54,7 @@ class ConfigPathsWindow(tk.Toplevel):
         self._build_path_rows(main_frame)
         
         # Buttons frame
-        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame = tk.Frame(main_frame, bg=Theme.BG_COLOR)
         buttons_frame.grid(row=5, column=0, columnspan=3, pady=(20, 0))
         
         close_btn = ttk.Button(
@@ -119,19 +70,19 @@ class ConfigPathsWindow(tk.Toplevel):
         """Build the path configuration rows."""
         def make_browse_row(label_text, var, browse_cmd, row_idx, icon="📁"):
             # Label with icon
-            label_frame = tk.Frame(parent, bg=self.bg_color, highlightthickness=0)
+            label_frame = tk.Frame(parent, bg=Theme.BG_COLOR, highlightthickness=0)
             label_frame.grid(row=row_idx, column=0, sticky="w", pady=8, padx=(0, 8))
             ttk.Label(
                 label_frame,
                 text=f"{icon} {label_text}",
-                font=("Segoe UI", 9),
+                font=(Theme.FONT_FAMILY, Theme.FONT_SIZE_NORMAL),
                 width=22,
                 anchor="w"
             ).pack(side="left")
             
             # Entry with better styling
-            e = ttk.Entry(parent, textvariable=var, width=50)
-            e.grid(row=row_idx, column=1, sticky="ew", pady=8, padx=4)
+            entry = ttk.Entry(parent, textvariable=var, width=50)
+            entry.grid(row=row_idx, column=1, sticky="ew", pady=8, padx=4)
             
             # Browse button with better styling
             btn = ttk.Button(

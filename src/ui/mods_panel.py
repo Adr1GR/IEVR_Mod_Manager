@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List, Optional, Callable
 from ..models import ModEntry
+from .theme import Theme
 
 
 class ModsPanel:
@@ -20,9 +21,10 @@ class ModsPanel:
         self.mod_entries: List[ModEntry] = []
         
         # Create frame with better styling
+        # Don't specify style here - it will be applied by MainWindow._apply_background_colors()
         self.frame = ttk.LabelFrame(
             parent, 
-            text="📦 Mods (Priority Order)", 
+            text="Mods (Priority Order)", 
             padding=8
         )
         self.frame.grid_rowconfigure(0, weight=1)
@@ -106,19 +108,21 @@ class ModsPanel:
         
         # Configure tag colors
         # Enabled/disabled colors (foreground) - these apply to all columns
-        self.tree.tag_configure("enabled_True", foreground="#107c10")
-        self.tree.tag_configure("enabled_False", foreground="#d13438")
+        self.tree.tag_configure("enabled_True", foreground=Theme.SUCCESS_COLOR)
+        self.tree.tag_configure("enabled_False", foreground=Theme.ERROR_COLOR)
         # Row background colors - using same background color as app
-        self.tree.tag_configure("even", background="#f5f5f5")
-        self.tree.tag_configure("odd", background="#f5f5f5")
+        self.tree.tag_configure("even", background=Theme.BG_COLOR)
+        self.tree.tag_configure("odd", background=Theme.BG_COLOR)
         
         # Selected state tags - maintain foreground colors with selection background
         # These tags MUST have foreground color set to override the default selection style
-        self.tree.tag_configure("selected_enabled_True", foreground="#107c10", background="#e1dfdd")
-        self.tree.tag_configure("selected_enabled_False", foreground="#d13438", background="#e1dfdd")
+        self.tree.tag_configure("selected_enabled_True", foreground=Theme.SUCCESS_COLOR, 
+                               background=Theme.SELECTED_BG)
+        self.tree.tag_configure("selected_enabled_False", foreground=Theme.ERROR_COLOR, 
+                               background=Theme.SELECTED_BG)
         # Row tags for selected state - only set background
-        self.tree.tag_configure("selected_even", background="#e1dfdd")
-        self.tree.tag_configure("selected_odd", background="#e1dfdd")
+        self.tree.tag_configure("selected_even", background=Theme.SELECTED_BG)
+        self.tree.tag_configure("selected_odd", background=Theme.SELECTED_BG)
         
         # Bind selection event to update tags
         self.tree.bind("<<TreeviewSelect>>", self._on_selection_change)

@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+from .theme import Theme
 
 
 class LogPanel:
@@ -14,7 +15,8 @@ class LogPanel:
         Args:
             parent: Parent widget
         """
-        self.frame = ttk.LabelFrame(parent, text="📋 Activity Log", padding=8)
+        # Don't specify style here - it will be applied by MainWindow._apply_background_colors()
+        self.frame = ttk.LabelFrame(parent, text="Activity Log", padding=8)
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
         
@@ -29,9 +31,9 @@ class LogPanel:
             container, 
             height=8, 
             wrap="word", 
-            font=("Consolas", 9),
-            bg="#1e1e1e",
-            fg="#d4d4d4",
+            font=(Theme.FONT_MONO, Theme.FONT_SIZE_NORMAL),
+            bg=Theme.BG_COLOR,
+            fg=Theme.TEXT_COLOR,
             insertbackground="#ffffff",
             selectbackground="#264f78",
             selectforeground="#ffffff",
@@ -48,11 +50,12 @@ class LogPanel:
         self.text_widget.configure(yscrollcommand=scrollbar.set)
         
         # Configure text tags for different log levels
-        self.text_widget.tag_config("success", foreground="#4ec9b0")
-        self.text_widget.tag_config("error", foreground="#f48771")
-        self.text_widget.tag_config("info", foreground="#569cd6")
-        self.text_widget.tag_config("warning", foreground="#dcdcaa")
-        self.text_widget.tag_config("timestamp", foreground="#808080", font=("Consolas", 8))
+        self.text_widget.tag_config("success", foreground=Theme.SUCCESS_COLOR)
+        self.text_widget.tag_config("error", foreground=Theme.ERROR_COLOR)
+        self.text_widget.tag_config("info", foreground=Theme.INFO_COLOR)
+        self.text_widget.tag_config("warning", foreground=Theme.WARNING_COLOR)
+        self.text_widget.tag_config("timestamp", foreground=Theme.TIMESTAMP_COLOR, 
+                                   font=(Theme.FONT_MONO, 8))
     
     def log(self, message: str, level: str = "info"):
         """
