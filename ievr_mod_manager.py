@@ -40,7 +40,6 @@ class IEVRModManager(tk.Tk):
         self.game_path = tk.StringVar()
         self.cfgbin_path = tk.StringVar()
         self.violacli_path = tk.StringVar()
-        self.mods_dir = tk.StringVar(value=DEFAULT_MODS_DIR)
         self.tmp_dir = tk.StringVar(value=DEFAULT_TMP_DIR)
         
         self.saved_mods = []
@@ -55,7 +54,6 @@ class IEVRModManager(tk.Tk):
         self.game_path.trace_add("write", lambda *args: self._save_config())
         self.cfgbin_path.trace_add("write", lambda *args: self._save_config())
         self.violacli_path.trace_add("write", lambda *args: self._save_config())
-        self.mods_dir.trace_add("write", lambda *args: self._save_config())
         self.tmp_dir.trace_add("write", lambda *args: self._save_config())
 
         self._load_config()
@@ -89,7 +87,7 @@ class IEVRModManager(tk.Tk):
             l.grid(row=row_idx, column=0, columnspan=3, sticky="w", **link_pad)
             l.bind("<Button-1>", lambda e: webbrowser.open_new(url))
         make_link(frm_top, "Download Viola.CLI-Portable.exe", "https://github.com/skythebro/Viola/releases/latest", 0)
-        make_link(frm_top, "Download cpk_list.cfg.bin", "https://google.com", 1)
+        make_link(frm_top, "Download cpk_list.cfg.bin", "https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list", 1)
         link_row_offset = 2
 
         def make_browse_row(parent, label_text, var, browse_cmd, row_idx):
@@ -117,7 +115,7 @@ class IEVRModManager(tk.Tk):
         frm_mods_apply.grid_columnconfigure(0, weight=1)
 
         # Mods frame
-        mods_frame = ttk.LabelFrame(frm_mods_apply, text="Mods (folder: Mods/)", padding=5)
+        mods_frame = ttk.LabelFrame(frm_mods_apply, text="Mods (folder: Mods/) - Mods should be ordered by priority", padding=5)
         mods_frame.grid(row=0, column=0, sticky="nsew")
         mods_frame.grid_rowconfigure(0, weight=1)
         mods_frame.grid_columnconfigure(0, weight=1)
@@ -139,9 +137,8 @@ class IEVRModManager(tk.Tk):
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.bind("<Double-1>", self._on_tree_double_click)
 
-        ttk.Button(frm_mods_apply, text="Apply Mods", command=self.apply_mods, style="Accent.TButton").grid(row=1, column=0, sticky="ew", pady=6)
+        ttk.Button(frm_mods_apply, text="Apply Changes", command=self.apply_mods, style="Accent.TButton").grid(row=1, column=0, sticky="ew", pady=6)
 
-        # Acciones (panel derecho)
         ctrl_frame = ttk.LabelFrame(frm_center, text="Actions", padding=5, width=220)
         ctrl_frame.grid(row=0, column=1, sticky="ns")
         ctrl_frame.grid_propagate(False)
@@ -150,11 +147,10 @@ class IEVRModManager(tk.Tk):
             ("Scan Mods", self.scan_mods),
             ("Move Up", self.move_up),
             ("Move Down", self.move_down),
-            ("Toggle Selected", self.toggle_selected),
+            #("Toggle Selected", self.toggle_selected),
             ("Enable All", self.enable_all),
             ("Disable All", self.disable_all),
-            ("Open Mods Folder", self.open_mods_folder),
-            ("Open tmp Folder", self.open_tmp_folder)
+            ("Open Mods Folder", self.open_mods_folder)
         ]
         for idx, (text, cmd) in enumerate(btns):
             ttk.Button(ctrl_frame, text=text, command=cmd).grid(row=idx, column=0, sticky="ew", pady=3)
@@ -171,8 +167,8 @@ class IEVRModManager(tk.Tk):
         # Botonera inferior
         frm_bottom = ttk.Frame(self, padding=10)
         frm_bottom.grid(row=3, column=0, sticky="ew")
-        ttk.Button(frm_bottom, text="Save Config", command=self._save_config).grid(row=0, column=0, sticky="w")
-        ttk.Button(frm_bottom, text="Reload Config", command=self._load_config).grid(row=0, column=1, padx=6, sticky="w")
+        #ttk.Button(frm_bottom, text="Save Config", command=self._save_config).grid(row=0, column=0, sticky="w")
+        #ttk.Button(frm_bottom, text="Reload Config", command=self._load_config).grid(row=0, column=1, padx=6, sticky="w")
         ttk.Button(frm_bottom, text="Exit", command=self._on_close).grid(row=0, column=2, sticky="e")
         frm_bottom.grid_columnconfigure(0, weight=1)
         frm_bottom.grid_columnconfigure(1, weight=1)
@@ -195,7 +191,7 @@ class IEVRModManager(tk.Tk):
             self.violacli_path.set(os.path.abspath(p))
 
     def open_mods_folder(self):
-        path = self.mods_dir.get() if isinstance(self.mods_dir, tk.StringVar) else DEFAULT_MODS_DIR
+        path = DEFAULT_MODS_DIR
         path = os.path.abspath(path)
         os.startfile(path) if os.path.exists(path) else messagebox.showinfo("Info", f"{path} does not exist")
 
@@ -206,7 +202,7 @@ class IEVRModManager(tk.Tk):
         os.startfile(path)
 
     def scan_mods(self):
-        mods_root = self.mods_dir.get() if isinstance(self.mods_dir, tk.StringVar) else DEFAULT_MODS_DIR
+        mods_root = DEFAULT_MODS_DIR
         mods_root = os.path.abspath(mods_root)
         os.makedirs(mods_root, exist_ok=True)
 
@@ -342,15 +338,18 @@ class IEVRModManager(tk.Tk):
 
         ordered = [me.path for me in self.mod_entries if me.enabled.get()]
         if not ordered:
-            messagebox.showinfo("Info", "No mods selected to apply.")
+            target_cpk = os.path.join(game_path, "data", "cpk_list.cfg.bin")
+            try:
+                os.makedirs(os.path.dirname(target_cpk), exist_ok=True)
+                shutil.copy2(cfgbin, target_cpk)
+                self._log(f"CHANGES APPLIED!!. No mods selected.")
+            except Exception as e:
+                self._log(f"Error applying changes: {e}")
             return
-
         tmp_root = self.tmp_dir.get() if isinstance(self.tmp_dir, tk.StringVar) else DEFAULT_TMP_DIR
         tmp_root = os.path.abspath(tmp_root)
         os.makedirs(tmp_root, exist_ok=True)
-
         cmd = [violacli, "-m", "merge", "-p", "PC", "--cl", cfgbin] + ordered + ["-o", tmp_root]
-
         self._running = True
         self._thread = threading.Thread(target=self._run_merge_and_copy, args=(cmd, tmp_root, game_path), daemon=True)
         self._thread.start()
@@ -438,13 +437,11 @@ class IEVRModManager(tk.Tk):
                 self.game_path.set(cfg.get("game_path", ""))
                 self.cfgbin_path.set(cfg.get("cfgbin_path", ""))
                 self.violacli_path.set(cfg.get("violacli_path", ""))
-                self.mods_dir.set(cfg.get("mods_dir", DEFAULT_MODS_DIR))
                 self.tmp_dir.set(cfg.get("tmp_dir", DEFAULT_TMP_DIR))
                 self.saved_mods = cfg.get("mods", [])
                 self._log(f"Configuration loaded from {CONFIG_PATH}")
             except Exception as e:
                 self._log(f"Error loading config: {e}")
-                self.mods_dir.set(DEFAULT_MODS_DIR)
                 self.tmp_dir.set(DEFAULT_TMP_DIR)
                 self.saved_mods = []
         else:
@@ -456,7 +453,6 @@ class IEVRModManager(tk.Tk):
             "game_path": self.game_path.get(),
             "cfgbin_path": self.cfgbin_path.get(),
             "violacli_path": self.violacli_path.get(),
-            "mods_dir": self.mods_dir.get(),
             "tmp_dir": self.tmp_dir.get(),
             "mods": [{"name": me.name, "enabled": me.enabled.get()} for me in self.mod_entries]
         }
