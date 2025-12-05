@@ -31,6 +31,7 @@ A mod manager for **Inazuma Eleven Victory Road**.
 
 ### Requirements
 
+- **.NET 8 Desktop Runtime** (needed to run the app; small download from Microsoft)
 - **Inazuma Eleven Victory Road** installed on your system
 - **Viola.CLI-Portable.exe** - Download from [Viola releases](https://github.com/skythebro/Viola/releases/latest) and place a single copy in the shared `viola` folder (see First Time Setup)
 - **cpk_list.cfg.bin** - Use the **Download cpk_list** button (recommended) or download from the [cpk_list repository](https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list) and copy it into the shared `cpk` folder (you can keep multiple versions)
@@ -39,6 +40,7 @@ A mod manager for **Inazuma Eleven Victory Road**.
 
 1. Download the latest release of **IEVR Mod Manager**
 2. Extract the files to a folder of your choice
+3. If not already installed, install the **.NET 8 Desktop Runtime** (x64)
 3. Run `IEVRModManager.exe`
 
 ### First Time Setup
@@ -219,11 +221,11 @@ dotnet build
 # Release build
 dotnet build -c Release
 
-# Publish self-contained (single executable, no .NET required)
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# Publish (recommended): single-file, framework-dependent (small download, requires .NET 8 Desktop Runtime)
+dotnet publish -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-# Publish standard (requires .NET Runtime)
-dotnet publish -c Release -r win-x64 --self-contained false
+# Publish self-contained (bundles .NET, larger ~150 MB)
+dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
 ```
 
 ### Running the Project
