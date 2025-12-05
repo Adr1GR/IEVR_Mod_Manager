@@ -441,6 +441,98 @@ namespace IEVRModManager
             SaveConfig();
         }
 
+        private async void CreateBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viola.IsRunning || _isApplying)
+            {
+                MessageBox.Show("Please wait until the current operation finishes.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var gamePath = _config.GamePath;
+            if (string.IsNullOrWhiteSpace(gamePath) || !Directory.Exists(gamePath))
+            {
+                MessageBox.Show("Invalid game path. Set it in Configuration first.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                SetApplyButtonEnabled(false);
+                var created = await EnsureBackupExistsAsync(gamePath, true, true);
+                if (!created)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Error creating backup: {ex.Message}", "error");
+                MessageBox.Show($"Error creating backup: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                SetApplyButtonEnabled(true);
+            }
+        }
+
+        private async void RestoreBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viola.IsRunning || _isApplying)
+            {
+                MessageBox.Show("Please wait until the current operation finishes.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var gamePath = _config.GamePath;
+            if (string.IsNullOrWhiteSpace(gamePath) || !Directory.Exists(gamePath))
+            {
+                MessageBox.Show("Invalid game path. Set it in Configuration first.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var gameFolderName = new DirectoryInfo(gamePath).Name;
+            var backupRoot = Path.Combine(Config.BackupDir, gameFolderName);
+            if (!Directory.Exists(backupRoot))
+            {
+                MessageBox.Show("No backup folder was found in the manager data folder.", "Backup not found",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                Log("No backup folder found; cannot restore.", "error");
+                return;
+            }
+
+            try
+            {
+                SetApplyButtonEnabled(false);
+                Log("Restoring backup...", "info");
+
+                await Task.Run(() =>
+                {
+                    CopyTopLevelFiles(backupRoot, gamePath);
+                    RestoreDataBackup(gamePath, backupRoot);
+                });
+
+                Log($"Backup restored successfully from {backupRoot}.", "success");
+                MessageBox.Show("Backup restored successfully.", "Backup",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Log($"Error restoring backup: {ex.Message}", "error");
+                MessageBox.Show($"Error restoring backup: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                SetApplyButtonEnabled(true);
+            }
+        }
+
         private async void ApplyMods_Click(object sender, RoutedEventArgs e)
         {
             if (_viola.IsRunning)
@@ -469,6 +561,13 @@ namespace IEVRModManager
                 {
                     MessageBox.Show("Invalid game path.", "Error", 
                         MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Ensure backup exists before making changes
+                var backupReady = await EnsureBackupExistsAsync(_config.GamePath, false, false);
+                if (!backupReady)
+                {
                     return;
                 }
 
@@ -760,6 +859,158 @@ namespace IEVRModManager
                     MessageBox.Show($"Could not save the log: {ex.Message}", "Error",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+        }
+
+        private async Task<bool> EnsureBackupExistsAsync(string gamePath, bool showMessageOnExisting, bool showMessageOnSuccess)
+        {
+            var gameFolderName = new DirectoryInfo(gamePath).Name;
+            var backupRoot = Path.Combine(Config.BackupDir, gameFolderName);
+
+            if (Directory.Exists(backupRoot))
+            {
+                Log("Backup folder already exists; skipping backup creation.", "info");
+                if (showMessageOnExisting)
+                {
+                    MessageBox.Show("A backup folder already exists in the manager data folder. Delete it if you need to create a new backup.", "Backup already exists",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                return true;
+            }
+
+            try
+            {
+                Log("Creating backup...", "info");
+                await CreateBackupInternalAsync(gamePath, backupRoot);
+                Log($"Backup created successfully. Location: {backupRoot}", "success");
+                if (showMessageOnSuccess)
+                {
+                    MessageBox.Show("Backup created successfully.", "Backup",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log($"Error creating backup: {ex.Message}", "error");
+                if (showMessageOnSuccess || showMessageOnExisting)
+                {
+                    MessageBox.Show($"Error creating backup: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                return false;
+            }
+        }
+
+        private Task CreateBackupInternalAsync(string gamePath, string backupRoot)
+        {
+            return Task.Run(() =>
+            {
+                Directory.CreateDirectory(backupRoot);
+                CopyTopLevelFiles(gamePath, backupRoot);
+                CreateDataBackup(gamePath, backupRoot);
+            });
+        }
+
+        private void CopyTopLevelFiles(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+            foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.TopDirectoryOnly))
+            {
+                var destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+        }
+
+        private void CreateDataBackup(string gamePath, string backupRoot)
+        {
+            var dataPath = Path.Combine(gamePath, "data");
+            if (!Directory.Exists(dataPath))
+            {
+                Log("Game data folder not found; data backup skipped.", "error");
+                return;
+            }
+
+            var backupDataPath = Path.Combine(backupRoot, "data");
+            Directory.CreateDirectory(backupDataPath);
+
+            var cfgSource = Path.Combine(dataPath, "cpk_list.cfg.bin");
+            if (File.Exists(cfgSource))
+            {
+                var cfgDest = Path.Combine(backupDataPath, "cpk_list.cfg.bin");
+                Directory.CreateDirectory(Path.GetDirectoryName(cfgDest)!);
+                File.Copy(cfgSource, cfgDest, true);
+            }
+            else
+            {
+                Log("cpk_list.cfg.bin not found; it was not backed up.", "info");
+            }
+
+            var commonSource = Path.Combine(dataPath, "common");
+            if (Directory.Exists(commonSource))
+            {
+                var commonDest = Path.Combine(backupDataPath, "common");
+                CopyDirectoryRecursive(commonSource, commonDest, true);
+            }
+            else
+            {
+                Log("common folder not found; it was not backed up.", "info");
+            }
+        }
+
+        private void RestoreDataBackup(string gamePath, string backupRoot)
+        {
+            var backupDataPath = Path.Combine(backupRoot, "data");
+            if (!Directory.Exists(backupDataPath))
+            {
+                Log("Backup data folder not found; skipping data restore.", "error");
+                return;
+            }
+
+            var destDataPath = Path.Combine(gamePath, "data");
+            Directory.CreateDirectory(destDataPath);
+
+            var cfgBackup = Path.Combine(backupDataPath, "cpk_list.cfg.bin");
+            if (File.Exists(cfgBackup))
+            {
+                var cfgDest = Path.Combine(destDataPath, "cpk_list.cfg.bin");
+                File.Copy(cfgBackup, cfgDest, true);
+            }
+            else
+            {
+                Log("No cpk_list.cfg.bin found in backup.", "info");
+            }
+
+            var commonBackup = Path.Combine(backupDataPath, "common");
+            if (Directory.Exists(commonBackup))
+            {
+                var commonDest = Path.Combine(destDataPath, "common");
+                if (Directory.Exists(commonDest))
+                {
+                    Directory.Delete(commonDest, true);
+                }
+                CopyDirectoryRecursive(commonBackup, commonDest, true);
+            }
+            else
+            {
+                Log("No common folder found in backup.", "info");
+            }
+        }
+
+        private void CopyDirectoryRecursive(string sourceDir, string destDir, bool overwrite)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir))
+            {
+                var destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, overwrite);
+            }
+
+            foreach (var directory in Directory.GetDirectories(sourceDir))
+            {
+                var destSubDir = Path.Combine(destDir, Path.GetFileName(directory));
+                CopyDirectoryRecursive(directory, destSubDir, overwrite);
             }
         }
 
