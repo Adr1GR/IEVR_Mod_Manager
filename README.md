@@ -2,7 +2,8 @@
 
 A mod manager for **Inazuma Eleven Victory Road**.
 
-<img width="800" height="535" alt="image" src="https://github.com/user-attachments/assets/d83ae72d-57fd-4893-a954-ebe1dc72253d" />
+<img width="800" height="535" alt="Screenshot 2025-12-05 220919" src="https://github.com/user-attachments/assets/2ac49875-33ef-417a-bbc9-65bc4cd0c640" />
+
 
 ---
 
