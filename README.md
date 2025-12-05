@@ -1,4 +1,4 @@
-# IEVR Mod Manager 1.2
+# IEVR Mod Manager 1.3
 
 A mod manager for **Inazuma Eleven Victory Road**.
 

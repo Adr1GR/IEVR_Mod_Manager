@@ -135,6 +135,37 @@ namespace IEVRModManager.Managers
                 .ToList();
         }
 
+        public List<string> DetectPacksModifiers(List<ModEntry> modEntries)
+        {
+            var modsTouchingPacks = new List<string>();
+            foreach (var mod in modEntries.Where(me => me.Enabled))
+            {
+                var dataPath = Path.Combine(mod.FullPath, "data");
+                if (!Directory.Exists(dataPath))
+                {
+                    continue;
+                }
+
+                var files = Directory.GetFiles(dataPath, "*", SearchOption.AllDirectories);
+                var touchesPacks = files.Any(filePath =>
+                {
+                    var relativePath = Path.GetRelativePath(dataPath, filePath)
+                        .Replace('\\', '/');
+                    return relativePath.StartsWith("packs/", StringComparison.OrdinalIgnoreCase);
+                });
+
+                if (touchesPacks)
+                {
+                    var displayName = string.IsNullOrWhiteSpace(mod.DisplayName) ? mod.Name : mod.DisplayName;
+                    modsTouchingPacks.Add(displayName);
+                }
+            }
+
+            return modsTouchingPacks
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         public Dictionary<string, List<string>> DetectFileConflicts(List<ModEntry> modEntries)
         {
             var conflicts = new Dictionary<string, List<string>>();

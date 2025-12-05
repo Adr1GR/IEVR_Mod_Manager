@@ -17,6 +17,7 @@ namespace IEVRModManager
     {
         private readonly ConfigManager _configManager;
         private readonly ModManager _modManager;
+        private readonly LastInstallManager _lastInstallManager;
         private readonly ViolaIntegration _viola;
         private ObservableCollection<ModEntryViewModel> _modEntries;
         private AppConfig _config = null!;
@@ -27,6 +28,7 @@ namespace IEVRModManager
             
             _configManager = new ConfigManager();
             _modManager = new ModManager();
+            _lastInstallManager = new LastInstallManager();
             _viola = new ViolaIntegration(message => Log(message, "info"));
             _modEntries = new ObservableCollection<ModEntryViewModel>();
             
@@ -191,6 +193,9 @@ namespace IEVRModManager
                 return;
             }
 
+            var lastInstall = _lastInstallManager.Load();
+            var gameDataPath = Path.Combine(_config.GamePath, "data");
+
             // Get enabled mods
             var modEntries = _modEntries.Select(me => new ModEntry
             {
@@ -208,7 +213,14 @@ namespace IEVRModManager
             // If no mods enabled, restore original cpk_list.cfg.bin
             if (enabledMods.Count == 0)
             {
-                var targetCpk = Path.Combine(_config.GamePath, "data", "cpk_list.cfg.bin");
+                var targetCpk = Path.Combine(gameDataPath, "cpk_list.cfg.bin");
+                var removed = RemoveObsoleteFiles(lastInstall, gameDataPath, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+                if (removed > 0)
+                {
+                    Log($"Removed {removed} leftover file(s) from previous install.", "info");
+                }
+                _lastInstallManager.Clear();
+
                 try
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(targetCpk)!);
@@ -224,6 +236,21 @@ namespace IEVRModManager
                     Log($"Error applying changes: {ex.Message}", "error");
                 }
                 return;
+            }
+
+            var packsModifiers = _modManager.DetectPacksModifiers(modEntries);
+            if (packsModifiers.Count > 0)
+            {
+                var packsWarningWindow = new PacksWarningWindow(this, packsModifiers);
+                var result = packsWarningWindow.ShowDialog();
+
+                if (result != true || !packsWarningWindow.UserChoseContinue)
+                {
+                    Log("Operation cancelled because of data/packs warning.", "info");
+                    return;
+                }
+
+                Log($"Warning: {packsModifiers.Count} mod(s) will modify data/packs. User chose to continue.", "info");
             }
 
             // Detect file conflicts before merging
@@ -251,12 +278,12 @@ namespace IEVRModManager
             await Task.Run(async () =>
             {
                 await RunMergeAndCopy(_config.ViolaCliPath, _config.CfgBinPath, 
-                    enabledMods, tmpRoot, _config.GamePath);
+                    enabledMods, tmpRoot, _config.GamePath, lastInstall);
             });
         }
 
         private async Task RunMergeAndCopy(string violaCli, string cfgBin, 
-            List<string> modPaths, string tmpRoot, string gamePath)
+            List<string> modPaths, string tmpRoot, string gamePath, LastInstallInfo lastInstall)
         {
             try
             {
@@ -273,9 +300,17 @@ namespace IEVRModManager
                 var tmpData = Path.Combine(tmpRoot, "data");
                 var destData = Path.Combine(gamePath, "data");
 
+                var mergedFiles = GetRelativeFiles(tmpData);
+                var mergedSet = new HashSet<string>(mergedFiles, StringComparer.OrdinalIgnoreCase);
+
                 if (_viola.CopyMergedFiles(tmpData, destData))
                 {
-                    _viola.CleanupTemp(tmpData);
+                    _viola.CleanupTemp(tmpRoot);
+                    var removed = RemoveObsoleteFiles(lastInstall, destData, mergedSet);
+                    if (removed > 0)
+                    {
+                        Dispatcher.Invoke(() => Log($"Removed {removed} leftover file(s) from previous install.", "info"));
+                    }
                     Dispatcher.Invoke(() => Log("MODS APPLIED!!", "success"));
                     
                     // Get applied mod names in order
@@ -298,6 +333,14 @@ namespace IEVRModManager
                         ? "1 Mod Applied Successfully" 
                         : $"{modCount} Mods Applied Successfully";
                     
+                    _lastInstallManager.Save(new LastInstallInfo
+                    {
+                        GamePath = Path.GetFullPath(gamePath),
+                        Files = mergedFiles,
+                        Mods = modNames,
+                        AppliedAt = DateTime.UtcNow
+                    });
+
                     Dispatcher.Invoke(() =>
                     {
                         var successWindow = new SuccessMessageWindow(this, message, modNames);
@@ -313,6 +356,100 @@ namespace IEVRModManager
             {
                 Dispatcher.Invoke(() => Log($"Unexpected error: {ex.Message}", "error"));
             }
+        }
+
+        private static List<string> GetRelativeFiles(string root)
+        {
+            if (!Directory.Exists(root))
+            {
+                return new List<string>();
+            }
+
+            return Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+                .Select(f => Path.GetRelativePath(root, f).Replace('\\', '/'))
+                .ToList();
+        }
+
+        private int RemoveObsoleteFiles(LastInstallInfo previousInstall, string destData, HashSet<string> newFiles)
+        {
+            if (previousInstall.Files == null || previousInstall.Files.Count == 0)
+            {
+                return 0;
+            }
+
+            if (!PathsMatch(previousInstall.GamePath, _config.GamePath))
+            {
+                Dispatcher.Invoke(() => Log("Skipped cleanup: stored install points to a different game path.", "info"));
+                return 0;
+            }
+
+            var destRoot = Path.GetFullPath(destData);
+            var removed = 0;
+
+            foreach (var relativePath in previousInstall.Files)
+            {
+                if (newFiles.Contains(relativePath))
+                {
+                    continue;
+                }
+
+                var targetPath = Path.GetFullPath(Path.Combine(destRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+                if (!targetPath.StartsWith(destRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (File.Exists(targetPath))
+                    {
+                        File.Delete(targetPath);
+                        removed++;
+                        var parentDir = Path.GetDirectoryName(targetPath);
+                        if (!string.IsNullOrEmpty(parentDir))
+                        {
+                            RemoveEmptyParents(parentDir, destRoot);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Dispatcher.Invoke(() => Log($"Could not delete leftover file {relativePath}: {ex.Message}", "error"));
+                }
+            }
+
+            return removed;
+        }
+
+        private static void RemoveEmptyParents(string dir, string stopAt)
+        {
+            var stopRoot = Path.GetFullPath(stopAt);
+            var current = dir;
+            while (!string.IsNullOrEmpty(current) &&
+                   current.StartsWith(stopRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                if (Directory.Exists(current) && !Directory.EnumerateFileSystemEntries(current).Any())
+                {
+                    Directory.Delete(current);
+                    current = Path.GetDirectoryName(current);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        private static bool PathsMatch(string first, string second)
+        {
+            if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+            {
+                return false;
+            }
+
+            var a = Path.GetFullPath(first).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var b = Path.GetFullPath(second).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return a.Equals(b, StringComparison.OrdinalIgnoreCase);
         }
 
         private void OpenModsFolder_Click(object sender, RoutedEventArgs e)

@@ -6,6 +6,7 @@ namespace IEVRModManager
     public static class Config
     {
         public const string AppConfigFile = "config.json";
+        public const string LastInstallFile = "last_install.json";
         public const string ModsDirName = "Mods";
         public const string TmpDirName = "tmp";
 
@@ -23,6 +24,7 @@ namespace IEVRModManager
         }
 
         public static string ConfigPath => Path.Combine(BaseDir, AppConfigFile);
+        public static string LastInstallPath => Path.Combine(BaseDir, LastInstallFile);
         public static string DefaultModsDir => Path.Combine(BaseDir, ModsDirName);
         public static string DefaultTmpDir => Path.Combine(BaseDir, TmpDirName);
 

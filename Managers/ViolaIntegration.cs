@@ -127,20 +127,21 @@ namespace IEVRModManager.Managers
             }
         }
 
-        public bool CleanupTemp(string tmpDataDir)
+        public bool CleanupTemp(string tmpDir)
         {
             try
             {
-                if (Directory.Exists(tmpDataDir))
+                if (Directory.Exists(tmpDir))
                 {
-                    Directory.Delete(tmpDataDir, true);
-                    _logCallback($"Removed temporary folder {tmpDataDir}.");
+                    Directory.Delete(tmpDir, true);
+                    Directory.CreateDirectory(tmpDir);
+                    _logCallback($"Cleaned temporary folder {tmpDir}.");
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                _logCallback($"Could not remove {tmpDataDir}: {ex.Message}");
+                _logCallback($"Could not remove {tmpDir}: {ex.Message}");
                 return false;
             }
         }
