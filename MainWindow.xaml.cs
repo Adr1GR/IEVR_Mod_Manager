@@ -439,8 +439,32 @@ namespace IEVRModManager
                     return;
                 }
 
-                var lastInstall = _lastInstallManager.Load();
                 var gameDataPath = Path.Combine(_config.GamePath, "data");
+                var tmpRoot = Path.GetFullPath(_config.TmpDir);
+
+                if (!Directory.Exists(gameDataPath))
+                {
+                    MessageBox.Show("Invalid game path: no data folder found.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Quick read/write checks so we fail fast on permission issues
+                if (!CheckReadWriteAccess(gameDataPath, "game data folder"))
+                {
+                    MessageBox.Show("No se pudo escribir en la carpeta del juego. Revisa permisos (ej. ejecutar como administrador) o que la ruta no esté protegida.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!CheckReadWriteAccess(tmpRoot, "temporary folder"))
+                {
+                    MessageBox.Show("No se pudo escribir en la carpeta temporal configurada. Revisa permisos o cambia la ruta en Configuración.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var lastInstall = _lastInstallManager.Load();
 
                 // Get enabled mods
                 var modEntries = _modEntries.Select(me => new ModEntry
@@ -517,7 +541,6 @@ namespace IEVRModManager
                 }
 
                 // Merge mods
-                var tmpRoot = Path.GetFullPath(_config.TmpDir);
                 Directory.CreateDirectory(tmpRoot);
 
                 // Run merge in background
@@ -930,6 +953,34 @@ namespace IEVRModManager
                 }
             }
             Directory.CreateDirectory(tmpRoot);
+        }
+
+        private bool CheckReadWriteAccess(string targetFolder, string label)
+        {
+            try
+            {
+                var folder = Path.GetFullPath(targetFolder);
+                Directory.CreateDirectory(folder);
+
+                var testFile = Path.Combine(folder, ".ievr_access_test.tmp");
+                var payload = $"test-{DateTime.UtcNow.Ticks}";
+                File.WriteAllText(testFile, payload);
+                var readBack = File.ReadAllText(testFile);
+                File.Delete(testFile);
+
+                if (!string.Equals(payload, readBack, StringComparison.Ordinal))
+                {
+                    Log($"Could not verify read/write in {label}: content mismatch.", "error");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log($"Could not access {label}: {ex.Message}", "error");
+                return false;
+            }
         }
     }
 
