@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
 using IEVRModManager.Managers;
 using IEVRModManager.Models;
 using IEVRModManager.Windows;
@@ -573,6 +574,55 @@ namespace IEVRModManager
             }
         }
 
+        private void CopyLog_Click(object sender, RoutedEventArgs e)
+        {
+            var logText = LogTextBox.Text ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(logText))
+            {
+                MessageBox.Show("Log is empty.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            Clipboard.SetText(logText);
+            MessageBox.Show("Log copied to clipboard.", "Info",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void SaveLog_Click(object sender, RoutedEventArgs e)
+        {
+            var logText = LogTextBox.Text ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(logText))
+            {
+                MessageBox.Show("Log is empty.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                FileName = "IEVR-ActivityLog.txt",
+                Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+                DefaultExt = ".txt"
+            };
+
+            var result = dialog.ShowDialog();
+            if (result == true)
+            {
+                try
+                {
+                    File.WriteAllText(dialog.FileName, logText);
+                    MessageBox.Show("Log saved successfully.", "Info",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not save the log: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private async Task RunMergeAndCopy(string violaCli, string cfgBin, 
             List<string> modPaths, string tmpRoot, string gamePath, LastInstallInfo lastInstall)
         {
@@ -779,7 +829,7 @@ namespace IEVRModManager
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = "https://github.com/Adr1GR/IEVR_Mod_Manager?tab=readme-ov-file#using-the-mod-manager",
+                FileName = "https://github.com/Adr1GR/IEVR_Mod_Manager?tab=readme-ov-file#for-users",
                 UseShellExecute = true
             });
         }
