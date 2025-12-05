@@ -13,6 +13,7 @@
     <Color x:Key="BorderColor">#3e3e3e</Color>
     <Color x:Key="SelectedBg">#2d2d2d</Color>
     <Color x:Key="TimestampColor">#808080</Color>
+    <Color x:Key="TextBrightColor">#f0f0f0</Color>
 
     <!-- SolidColorBrushes -->
     <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}"/>
@@ -23,6 +24,7 @@
     <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="TextBrightBrush" Color="{StaticResource TextBrightColor}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="SelectedBgBrush" Color="{StaticResource SelectedBg}"/>
     <SolidColorBrush x:Key="TimestampBrush" Color="{StaticResource TimestampColor}"/>
@@ -74,6 +76,10 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource AccentHoverBrush}"/>
             </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="#555555"/>
+                <Setter Property="Foreground" Value="#b3b3b3"/>
+            </Trigger>
         </Style.Triggers>
     </Style>
 
@@ -87,6 +93,100 @@
         <Setter Property="FontFamily" Value="{StaticResource FontFamily}"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="MinHeight" Value="32"/>
+    </Style>
+
+    <!-- ComboBox Style -->
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource BgBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrightBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="ToggleButton"
+                                      Grid.Column="2"
+                                      Focusable="False"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      ClickMode="Press"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="20"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+                                <Path Grid.Column="1"
+                                      Margin="0,0,6,0"
+                                      VerticalAlignment="Center"
+                                      Fill="{TemplateBinding Foreground}"
+                                      Data="M 0 0 L 4 4 L 8 0 Z"/>
+                            </Grid>
+                        </ToggleButton>
+                        <Popup x:Name="Popup"
+                               Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Slide">
+                            <Grid MaxHeight="240"
+                                  Background="{StaticResource BgBrush}"
+                                  SnapsToDevicePixels="True">
+                                <Border Margin="0,2,0,0"
+                                        Background="{StaticResource BgBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1">
+                                    <ScrollViewer Margin="0"
+                                                  Style="{DynamicResource {x:Static GridView.GridViewScrollViewerStyleKey}}">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ToggleButton" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextBrightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.6"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Background" Value="{StaticResource BgBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrightBrush}"/>
+        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource SelectedBgBrush}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextBrightBrush}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Label Style -->

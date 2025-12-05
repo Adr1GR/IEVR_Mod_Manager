@@ -45,40 +45,40 @@
                     Width="120" Click="BrowseGame_Click" Margin="4,0"/>
         </Grid>
 
-        <!-- CfgBin Path -->
+        <!-- Cpk storage -->
         <Grid Grid.Row="3" Margin="0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Label Grid.Column="0" Content="📄 cpk_list.cfg.bin:" 
+            <Label Grid.Column="0" Content="📄 cpk storage folder:" 
                    Foreground="{StaticResource TextBrush}" 
                    Width="220" HorizontalAlignment="Left"/>
-            <TextBox Grid.Column="1" x:Name="CfgBinPathTextBox" 
-                     Text="{Binding CfgBinPath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                     Margin="4,0" TextChanged="CfgBinPathTextBox_TextChanged"/>
-            <Button Grid.Column="2" Content="Browse..." 
+            <TextBlock Grid.Column="1" Text="Opens shared storage. Copy any cpk_list.cfg.bin files here (you can keep multiple)." 
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource TextBrush}" Margin="4,0"/>
+            <Button Grid.Column="2" Content="Open folder" 
                     Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="120" Click="BrowseCfgBin_Click" Margin="4,0"/>
+                    Width="120" Click="OpenCpkStorage_Click" Margin="4,0"/>
         </Grid>
 
-        <!-- ViolaCli Path -->
+        <!-- Viola storage -->
         <Grid Grid.Row="4" Margin="0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Label Grid.Column="0" Content="⚙️ Viola.CLI-Portable.exe:" 
+            <Label Grid.Column="0" Content="⚙️ Viola CLI folder:" 
                    Foreground="{StaticResource TextBrush}" 
                    Width="220" HorizontalAlignment="Left"/>
-            <TextBox Grid.Column="1" x:Name="ViolaCliPathTextBox" 
-                     Text="{Binding ViolaCliPath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                     Margin="4,0" TextChanged="ViolaCliPathTextBox_TextChanged"/>
-            <Button Grid.Column="2" Content="Browse..." 
+            <TextBlock Grid.Column="1" Text="Place a single Viola CLI executable here. The app will use the one it finds." 
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource TextBrush}" Margin="4,0"/>
+            <Button Grid.Column="2" Content="Open folder" 
                     Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="120" Click="BrowseViolaCli_Click" Margin="4,0"/>
+                    Width="120" Click="OpenViolaStorage_Click" Margin="4,0"/>
         </Grid>
 
         <!-- Spacer -->

@@ -12,6 +12,7 @@ namespace IEVRModManager.Models
         private string _cfgBinPath = string.Empty;
         private string _violaCliPath = string.Empty;
         private string _tmpDir = string.Empty;
+        private string _selectedCpkName = string.Empty;
 
         public string GamePath
         {
@@ -31,6 +32,12 @@ namespace IEVRModManager.Models
             set { _violaCliPath = value; OnPropertyChanged(); }
         }
 
+        public string SelectedCpkName
+        {
+            get => _selectedCpkName;
+            set { _selectedCpkName = value; OnPropertyChanged(); }
+        }
+
         public string TmpDir
         {
             get => _tmpDir;
@@ -46,7 +53,8 @@ namespace IEVRModManager.Models
                 GamePath = string.Empty,
                 CfgBinPath = string.Empty,
                 ViolaCliPath = string.Empty,
-                TmpDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tmp"),
+                SelectedCpkName = string.Empty,
+                TmpDir = Config.DefaultTmpDir,
                 Mods = new List<ModData>()
             };
         }

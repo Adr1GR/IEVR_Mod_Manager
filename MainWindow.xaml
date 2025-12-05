@@ -34,6 +34,7 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <GroupBox Grid.Row="0" Header="Mods (Priority Order)" Padding="8">
@@ -78,7 +79,22 @@
                     <Button Content="🔍 Scan Mods" Style="{StaticResource PrimaryButtonStyle}" 
                             Click="ScanMods_Click" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                     <Button Content="📂 Open Mods Folder" Style="{StaticResource PrimaryButtonStyle}" 
-                            Click="OpenModsFolder_Click" Margin="4,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                            Click="OpenModsFolder_Click" Margin="4,0,8,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <Label Content="cpk list:" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <ComboBox x:Name="CpkSelector"
+                                  Width="240"
+                                  ItemsSource="{Binding}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="FileName"
+                                  SelectionChanged="CpkSelector_SelectionChanged"
+                                  Margin="0,0,6,0"/>
+                        <Button Content="⬇️ Download cpk_list"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Click="DownloadCpkLists_Click"
+                                Width="170"
+                                Margin="0,0,6,0"/>
+                    </StackPanel>
                     <TextBlock Text="📖 Help" 
                                Foreground="{StaticResource AccentBrush}"
                                FontSize="12"
@@ -91,7 +107,7 @@
                 </StackPanel>
 
                 <!-- Apply Button -->
-                <Button Grid.Row="2" Content="✓ Apply Changes" 
+                <Button x:Name="ApplyButton" Grid.Row="2" Content="✓ Apply Changes" 
                         Style="{StaticResource AccentButtonStyle}"
                         Click="ApplyMods_Click" 
                         HorizontalAlignment="Stretch"/>

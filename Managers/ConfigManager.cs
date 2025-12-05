@@ -12,6 +12,7 @@ namespace IEVRModManager.Managers
         public ConfigManager()
         {
             _configPath = Config.ConfigPath;
+            EnsureDirectoryExists(Path.GetDirectoryName(_configPath));
         }
 
         public AppConfig Load()
@@ -37,14 +38,16 @@ namespace IEVRModManager.Managers
             }
         }
 
-        public bool Save(string gamePath, string cfgBinPath, string violaCliPath, 
+        public bool Save(string gamePath, string selectedCpkName, string cfgBinPath, string violaCliPath, 
             string tmpDir, System.Collections.Generic.List<ModEntry> modEntries)
         {
             try
             {
+                EnsureDirectoryExists(Path.GetDirectoryName(_configPath));
                 var config = new AppConfig
                 {
                     GamePath = gamePath,
+                    SelectedCpkName = selectedCpkName,
                     CfgBinPath = cfgBinPath,
                     ViolaCliPath = violaCliPath,
                     TmpDir = tmpDir,
@@ -65,6 +68,19 @@ namespace IEVRModManager.Managers
             {
                 System.Diagnostics.Debug.WriteLine($"Error saving config: {ex.Message}");
                 return false;
+            }
+        }
+
+        private static void EnsureDirectoryExists(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
             }
         }
     }

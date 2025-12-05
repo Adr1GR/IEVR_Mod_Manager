@@ -9,24 +9,29 @@ namespace IEVRModManager
         public const string LastInstallFile = "last_install.json";
         public const string ModsDirName = "Mods";
         public const string TmpDirName = "tmp";
+        public const string SharedStorageDirName = "storage";
+        public const string SharedStorageCpkDirName = "cpk";
+        public const string SharedStorageViolaDirName = "viola";
+
+        private static readonly string BaseDataPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".ievrModManager");
 
         public static string BaseDir
         {
             get
             {
-                // Prefer executable directory, fallback to base directory
-                if (!string.IsNullOrEmpty(AppDomain.CurrentDomain.BaseDirectory))
-                {
-                    return AppDomain.CurrentDomain.BaseDirectory;
-                }
-                return AppContext.BaseDirectory;
+                EnsureDirectoryExists(BaseDataPath);
+                return BaseDataPath;
             }
         }
 
         public static string ConfigPath => Path.Combine(BaseDir, AppConfigFile);
         public static string LastInstallPath => Path.Combine(BaseDir, LastInstallFile);
-        public static string DefaultModsDir => Path.Combine(BaseDir, ModsDirName);
-        public static string DefaultTmpDir => Path.Combine(BaseDir, TmpDirName);
+        public static string DefaultModsDir => EnsureDirectory(Path.Combine(BaseDir, ModsDirName));
+        public static string DefaultTmpDir => EnsureDirectory(Path.Combine(BaseDir, TmpDirName));
+        public static string SharedStorageDir => EnsureDirectory(Path.Combine(BaseDir, SharedStorageDirName));
+        public static string SharedStorageCpkDir => EnsureDirectory(Path.Combine(SharedStorageDir, SharedStorageCpkDirName));
+        public static string SharedStorageViolaDir => EnsureDirectory(Path.Combine(SharedStorageDir, SharedStorageViolaDirName));
 
         // UI Configuration
         public const string WindowTitle = "IEVR Mod Manager";
@@ -39,6 +44,20 @@ namespace IEVRModManager
         public const string ViolaReleaseUrl = "https://github.com/skythebro/Viola/releases/latest";
         public const string CpkListUrl = "https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list";
         public const string GameBananaModsUrl = "https://gamebanana.com/mods/games/20069";
+
+        private static string EnsureDirectory(string path)
+        {
+            EnsureDirectoryExists(path);
+            return path;
+        }
+
+        private static void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
     }
 }
 

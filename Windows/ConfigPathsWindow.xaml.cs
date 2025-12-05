@@ -1,9 +1,7 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using Microsoft.Win32;
 using System.Windows.Forms;
-using WinFormsDialog = System.Windows.Forms.OpenFileDialog;
-using WpfDialog = Microsoft.Win32.OpenFileDialog;
 using IEVRModManager.Models;
 
 namespace IEVRModManager.Windows
@@ -25,8 +23,6 @@ namespace IEVRModManager.Windows
             
             // Ensure initial values are displayed correctly
             GamePathTextBox.Text = _config.GamePath ?? string.Empty;
-            CfgBinPathTextBox.Text = _config.CfgBinPath ?? string.Empty;
-            ViolaCliPathTextBox.Text = _config.ViolaCliPath ?? string.Empty;
         }
 
         private void BrowseGame_Click(object sender, RoutedEventArgs e)
@@ -43,40 +39,6 @@ namespace IEVRModManager.Windows
             }
         }
 
-        private void BrowseCfgBin_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new WpfDialog
-            {
-                Title = "Select cpk_list.cfg.bin",
-                Filter = "cfg.bin files (*.cfg.bin)|*.cfg.bin|All files (*.*)|*.*"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                var selectedPath = Path.GetFullPath(dialog.FileName);
-                _config.CfgBinPath = selectedPath;
-                CfgBinPathTextBox.Text = selectedPath;
-                _saveCallback?.Invoke();
-            }
-        }
-
-        private void BrowseViolaCli_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new WpfDialog
-            {
-                Title = "Select violacli.exe",
-                Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                var selectedPath = Path.GetFullPath(dialog.FileName);
-                _config.ViolaCliPath = selectedPath;
-                ViolaCliPathTextBox.Text = selectedPath;
-                _saveCallback?.Invoke();
-            }
-        }
-
         private void GamePathTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (sender is System.Windows.Controls.TextBox textBox)
@@ -86,32 +48,44 @@ namespace IEVRModManager.Windows
             }
         }
 
-        private void CfgBinPathTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.TextBox textBox)
-            {
-                _config.CfgBinPath = textBox.Text;
-                _saveCallback?.Invoke();
-            }
-        }
-
-        private void ViolaCliPathTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.TextBox textBox)
-            {
-                _config.ViolaCliPath = textBox.Text;
-                _saveCallback?.Invoke();
-            }
-        }
-
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             // Save current values before closing
             _config.GamePath = GamePathTextBox.Text;
-            _config.CfgBinPath = CfgBinPathTextBox.Text;
-            _config.ViolaCliPath = ViolaCliPathTextBox.Text;
             _saveCallback?.Invoke();
             Close();
+        }
+
+        private void OpenCpkStorage_Click(object sender, RoutedEventArgs e)
+        {
+            TryOpenFolder(Config.SharedStorageCpkDir);
+        }
+
+        private void OpenViolaStorage_Click(object sender, RoutedEventArgs e)
+        {
+            TryOpenFolder(Config.SharedStorageViolaDir);
+        }
+
+        private static void TryOpenFolder(string path)
+        {
+            try
+            {
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

@@ -13,6 +13,7 @@ namespace IEVRModManager.Managers
         public LastInstallManager()
         {
             _recordPath = Config.LastInstallPath;
+            EnsureDirectoryExists(Path.GetDirectoryName(_recordPath));
         }
 
         public LastInstallInfo Load()
@@ -42,6 +43,7 @@ namespace IEVRModManager.Managers
         {
             try
             {
+                EnsureDirectoryExists(Path.GetDirectoryName(_recordPath));
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
@@ -73,6 +75,19 @@ namespace IEVRModManager.Managers
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error deleting last install info: {ex.Message}");
+            }
+        }
+
+        private static void EnsureDirectoryExists(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
             }
         }
     }
