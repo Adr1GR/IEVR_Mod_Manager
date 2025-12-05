@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using IEVRModManager.Managers;
 using IEVRModManager.Models;
@@ -28,6 +29,7 @@ namespace IEVRModManager
         private static readonly HttpClient _httpClient = new();
         private AppConfig _config = null!;
         private bool _isApplying;
+        private DispatcherTimer? _playResetTimer;
 
         public MainWindow()
         {
@@ -619,6 +621,17 @@ namespace IEVRModManager
                 return;
             }
 
+            if (!ModsMatchLastInstall())
+            {
+                var window = new PendingChangesWindow(this,
+                    "The currently selected mods do not match the last applied set. Apply changes to ensure you play with the selected mods. Do you want to continue anyway?");
+                var result = window.ShowDialog();
+                if (result != true || !window.UserChoseContinue)
+                {
+                    return;
+                }
+            }
+
             var exePath = Path.Combine(_config.GamePath, "nie.exe");
             if (!File.Exists(exePath))
             {
@@ -629,6 +642,9 @@ namespace IEVRModManager
 
             try
             {
+                SetPlayLoadingState(true);
+                Log("Launching game...", "info");
+
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = exePath,
@@ -638,9 +654,64 @@ namespace IEVRModManager
             }
             catch (Exception ex)
             {
+                SetPlayLoadingState(false);
                 MessageBox.Show($"Could not start the game: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void SetPlayLoadingState(bool isLoading)
+        {
+            _playResetTimer?.Stop();
+
+            if (isLoading)
+            {
+                PlayButton.Content = "Launching game...";
+                _playResetTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(5)
+                };
+                _playResetTimer.Tick += (_, _) =>
+                {
+                    PlayButton.Content = "▶ Play";
+                    _playResetTimer?.Stop();
+                };
+                _playResetTimer.Start();
+            }
+            else
+            {
+                PlayButton.Content = "▶ Play";
+            }
+        }
+
+        private bool ModsMatchLastInstall()
+        {
+            var last = _lastInstallManager.Load();
+            if (!PathsMatch(last.GamePath, _config.GamePath))
+            {
+                // Different game path or never applied
+                return last.Mods.Count == 0 && _modEntries.All(m => !m.Enabled);
+            }
+
+            var currentEnabled = _modEntries
+                .Where(m => m.Enabled)
+                .Select(m => string.IsNullOrWhiteSpace(m.DisplayName) ? m.Name : m.DisplayName)
+                .ToList();
+
+            if (currentEnabled.Count != last.Mods.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < currentEnabled.Count; i++)
+            {
+                if (!currentEnabled[i].Equals(last.Mods[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void CopyLog_Click(object sender, RoutedEventArgs e)
