@@ -244,6 +244,7 @@ namespace IEVRModManager
         private void SetApplyButtonEnabled(bool isEnabled)
         {
             ApplyButton.IsEnabled = isEnabled;
+            PlayButton.IsEnabled = isEnabled;
         }
 
         private void ScanMods()
@@ -529,6 +530,46 @@ namespace IEVRModManager
             {
                 _isApplying = false;
                 SetApplyButtonEnabled(true);
+            }
+        }
+
+        private void PlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isApplying || _viola.IsRunning)
+            {
+                MessageBox.Show("Please wait until mod application finishes.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_config.GamePath) || !Directory.Exists(_config.GamePath))
+            {
+                MessageBox.Show("Select the game path before using Play.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var exePath = Path.Combine(_config.GamePath, "nie.exe");
+            if (!File.Exists(exePath))
+            {
+                MessageBox.Show("nie.exe was not found in the game path.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    WorkingDirectory = _config.GamePath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not start the game: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
