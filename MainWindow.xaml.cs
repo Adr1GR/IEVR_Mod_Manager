@@ -29,6 +29,7 @@ namespace IEVRModManager
         private static readonly HttpClient _httpClient = new();
         private AppConfig _config = null!;
         private bool _isApplying;
+        private bool _isDownloadingCpkLists;
         private DispatcherTimer? _playResetTimer;
 
         public MainWindow()
@@ -50,6 +51,7 @@ namespace IEVRModManager
             RefreshCpkOptions();
             ScanMods();
             CleanupTempDir();
+            _ = DownloadAndRefreshCpkListsAsync();
         }
 
         private void LoadConfig()
@@ -254,6 +256,40 @@ namespace IEVRModManager
             return downloaded;
         }
 
+        private async Task DownloadAndRefreshCpkListsAsync()
+        {
+            if (_isDownloadingCpkLists)
+            {
+                Log("Already downloading cpk_list files, please wait.", "info");
+                return;
+            }
+
+            _isDownloadingCpkLists = true;
+
+            try
+            {
+                Log("Fetching available cpk_list files from GitHub...", "info");
+                var downloaded = await DownloadCpkFilesAsync();
+                if (downloaded > 0)
+                {
+                    Log($"Downloaded {downloaded} cpk_list file(s).", "success");
+                    RefreshCpkOptions();
+                }
+                else
+                {
+                    Log("No new cpk_list files downloaded (they may already exist).", "info");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Error downloading cpk_list files: {ex.Message}", "error");
+            }
+            finally
+            {
+                _isDownloadingCpkLists = false;
+            }
+        }
+
         private void SetApplyButtonEnabled(bool isEnabled)
         {
             ApplyButton.IsEnabled = isEnabled;
@@ -357,21 +393,7 @@ namespace IEVRModManager
 
             try
             {
-                Log("Fetching available cpk_list files from GitHub...", "info");
-                var downloaded = await DownloadCpkFilesAsync();
-                if (downloaded > 0)
-                {
-                    Log($"Downloaded {downloaded} cpk_list file(s).", "success");
-                    RefreshCpkOptions();
-                }
-                else
-                {
-                    Log("No new cpk_list files downloaded (they may already exist).", "info");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Error downloading cpk_list files: {ex.Message}", "error");
+                await DownloadAndRefreshCpkListsAsync();
             }
             finally
             {
@@ -443,6 +465,16 @@ namespace IEVRModManager
 
         private async void CreateBackup_Click(object sender, RoutedEventArgs e)
         {
+            await RunCreateBackupFlowAsync();
+        }
+
+        private async void RestoreBackup_Click(object sender, RoutedEventArgs e)
+        {
+            await RunRestoreBackupFlowAsync();
+        }
+
+        private async Task RunCreateBackupFlowAsync()
+        {
             if (_viola.IsRunning || _isApplying)
             {
                 MessageBox.Show("Please wait until the current operation finishes.", "Info",
@@ -479,7 +511,7 @@ namespace IEVRModManager
             }
         }
 
-        private async void RestoreBackup_Click(object sender, RoutedEventArgs e)
+        private async Task RunRestoreBackupFlowAsync()
         {
             if (_viola.IsRunning || _isApplying)
             {
@@ -1244,15 +1276,20 @@ namespace IEVRModManager
                 Mods = _config.Mods
             };
             
-            var window = new ConfigPathsWindow(this, configCopy, () =>
-            {
-                // Save when something changes
-                _config.GamePath = configCopy.GamePath;
-                _config.CfgBinPath = configCopy.CfgBinPath;
-                _config.SelectedCpkName = configCopy.SelectedCpkName;
-                _config.ViolaCliPath = configCopy.ViolaCliPath;
-                SaveConfig();
-            });
+            var window = new ConfigPathsWindow(
+                this,
+                configCopy,
+                () =>
+                {
+                    // Save when something changes
+                    _config.GamePath = configCopy.GamePath;
+                    _config.CfgBinPath = configCopy.CfgBinPath;
+                    _config.SelectedCpkName = configCopy.SelectedCpkName;
+                    _config.ViolaCliPath = configCopy.ViolaCliPath;
+                    SaveConfig();
+                },
+                RunCreateBackupFlowAsync,
+                RunRestoreBackupFlowAsync);
             
             window.ShowDialog();
             

@@ -132,11 +132,6 @@
                                   SelectedValuePath="FileName"
                                   SelectionChanged="CpkSelector_SelectionChanged"
                                   Margin="0,0,6,0"/>
-                        <Button Content="⬇️ Download cpk_list"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Click="DownloadCpkLists_Click"
-                                Width="170"
-                                Margin="0,0,6,0"/>
                     </StackPanel>
                     <TextBlock Text="📖 Help" 
                                Foreground="{StaticResource AccentBrush}"
@@ -180,19 +175,10 @@
                     <Button Content="⬇️ Move Down" Style="{StaticResource PrimaryButtonStyle}" 
                             Click="MoveDown_Click" Margin="0,0,0,8" HorizontalAlignment="Stretch"/>
                     
-                    <Separator Margin="0,0,0,8"/>
-                    
                     <Button Content="✅ Enable All" Style="{StaticResource PrimaryButtonStyle}" 
                             Click="EnableAll_Click" Margin="0,0,0,4" HorizontalAlignment="Stretch"/>
                     <Button Content="❌ Disable All" Style="{StaticResource PrimaryButtonStyle}" 
                             Click="DisableAll_Click" HorizontalAlignment="Stretch"/>
-
-                    <Separator Margin="0,8,0,8"/>
-
-                    <Button Content="💾 Create Backup" Style="{StaticResource PrimaryButtonStyle}"
-                            Click="CreateBackup_Click" Margin="0,0,0,4" HorizontalAlignment="Stretch"/>
-                    <Button Content="⤴ Restore Backup" Style="{StaticResource PrimaryButtonStyle}"
-                            Click="RestoreBackup_Click" HorizontalAlignment="Stretch"/>
                 </StackPanel>
             </GroupBox>
         </Grid>

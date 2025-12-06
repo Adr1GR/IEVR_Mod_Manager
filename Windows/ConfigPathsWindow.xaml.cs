@@ -1,8 +1,10 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using IEVRModManager.Models;
+using System.Threading.Tasks;
 
 namespace IEVRModManager.Windows
 {
@@ -10,14 +12,18 @@ namespace IEVRModManager.Windows
     {
         private AppConfig _config;
         private System.Action _saveCallback;
+        private readonly Func<Task> _createBackupAction;
+        private readonly Func<Task> _restoreBackupAction;
 
-        public ConfigPathsWindow(Window parent, AppConfig config, System.Action saveCallback)
+        public ConfigPathsWindow(Window parent, AppConfig config, System.Action saveCallback, Func<Task> createBackupAction, Func<Task> restoreBackupAction)
         {
             InitializeComponent();
             Owner = parent;
             
             _config = config;
             _saveCallback = saveCallback;
+            _createBackupAction = createBackupAction;
+            _restoreBackupAction = restoreBackupAction;
             
             DataContext = _config;
             
@@ -84,6 +90,42 @@ namespace IEVRModManager.Windows
             catch (System.Exception ex)
             {
                 System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void CreateBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (_createBackupAction == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await _createBackupAction.Invoke();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error creating backup: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void RestoreBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (_restoreBackupAction == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await _restoreBackupAction.Invoke();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error restoring backup: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
