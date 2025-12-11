@@ -80,9 +80,8 @@ namespace IEVRModManager.Windows
             }
             else
             {
-                MessageBox.Show(LocalizationHelper.GetString("SelectProfileToLoad"), 
-                    LocalizationHelper.GetString("ModProfiles"),
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var infoWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), LocalizationHelper.GetString("SelectProfileToLoad"), MessageType.Info);
+                infoWindow.ShowDialog();
             }
         }
 
@@ -91,9 +90,8 @@ namespace IEVRModManager.Windows
             var profileName = ProfileNameTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(profileName))
             {
-                MessageBox.Show(LocalizationHelper.GetString("EnterProfileName"), 
-                    LocalizationHelper.GetString("ModProfiles"),
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                var warningWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), LocalizationHelper.GetString("EnterProfileName"), MessageType.Warning);
+                warningWindow.ShowDialog();
                 return;
             }
 
@@ -102,13 +100,15 @@ namespace IEVRModManager.Windows
                 ProfilesListBox.SelectedItem is ProfileViewModel selected && 
                 selected.Name != profileName)
             {
-                var result = MessageBox.Show(
-                    string.Format(LocalizationHelper.GetString("ProfileExistsOverwrite"), profileName),
+                var resultWindow = new MessageWindow(
+                    this,
                     LocalizationHelper.GetString("ModProfiles"),
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
+                    string.Format(LocalizationHelper.GetString("ProfileExistsOverwrite"), profileName),
+                    MessageType.Warning,
+                    MessageButtons.YesNo);
                 
-                if (result != MessageBoxResult.Yes)
+                var result = resultWindow.ShowDialog();
+                if (result != true || resultWindow.Result != true)
                 {
                     return;
                 }
@@ -121,17 +121,15 @@ namespace IEVRModManager.Windows
                 
                 if (_profileManager.SaveProfile(profile))
                 {
-                    MessageBox.Show(string.Format(LocalizationHelper.GetString("ProfileSaved"), profileName), 
-                        LocalizationHelper.GetString("ModProfiles"),
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    var successWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), string.Format(LocalizationHelper.GetString("ProfileSaved"), profileName), MessageType.Success);
+                    successWindow.ShowDialog();
                     LoadProfiles();
                     ProfileNameTextBox.Text = string.Empty;
                 }
                 else
                 {
-                    MessageBox.Show(LocalizationHelper.GetString("ErrorSavingProfile"), 
-                        LocalizationHelper.GetString("ModProfiles"),
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    var errorWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), LocalizationHelper.GetString("ErrorSavingProfile"), MessageType.Error);
+                    errorWindow.ShowDialog();
                 }
             }
         }
@@ -140,13 +138,15 @@ namespace IEVRModManager.Windows
         {
             if (ProfilesListBox.SelectedItem is ProfileViewModel selected)
             {
-                var result = MessageBox.Show(
-                    string.Format(LocalizationHelper.GetString("ConfirmDeleteProfile"), selected.Name),
+                var resultWindow = new MessageWindow(
+                    this,
                     LocalizationHelper.GetString("ModProfiles"),
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
+                    string.Format(LocalizationHelper.GetString("ConfirmDeleteProfile"), selected.Name),
+                    MessageType.Warning,
+                    MessageButtons.YesNo);
                 
-                if (result == MessageBoxResult.Yes)
+                var result = resultWindow.ShowDialog();
+                if (result == true && resultWindow.Result == true)
                 {
                     if (_profileManager.DeleteProfile(selected.Name))
                     {
@@ -155,17 +155,15 @@ namespace IEVRModManager.Windows
                     }
                     else
                     {
-                        MessageBox.Show(LocalizationHelper.GetString("ErrorDeletingProfile"), 
-                            LocalizationHelper.GetString("ModProfiles"),
-                            MessageBoxButton.OK, MessageBoxImage.Error);
+                        var errorWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), LocalizationHelper.GetString("ErrorDeletingProfile"), MessageType.Error);
+                        errorWindow.ShowDialog();
                     }
                 }
             }
             else
             {
-                MessageBox.Show(LocalizationHelper.GetString("SelectProfileToDelete"), 
-                    LocalizationHelper.GetString("ModProfiles"),
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var infoWindow = new MessageWindow(this, LocalizationHelper.GetString("ModProfiles"), LocalizationHelper.GetString("SelectProfileToDelete"), MessageType.Info);
+                infoWindow.ShowDialog();
             }
         }
 

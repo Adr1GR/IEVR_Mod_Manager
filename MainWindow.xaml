@@ -1,7 +1,7 @@
 <Window x:Class="IEVRModManager.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="IEVR Mod Manager 1.6" 
+        Title="IEVR Mod Manager 1.7" 
         Height="900" Width="1400"
         MinHeight="600" MinWidth="1000"
         WindowStartupLocation="CenterScreen"
@@ -41,7 +41,7 @@
         </Grid.RowDefinitions>
 
         <!-- Title -->
-        <Label x:Name="TitleLabel" Grid.Row="0" Content="IE:VR Mod Manager 1.6" 
+        <Label x:Name="TitleLabel" Grid.Row="0" Content="IE:VR Mod Manager 1.7" 
                FontSize="26" FontWeight="Bold" 
                Foreground="{DynamicResource TextBrightBrush}"
                HorizontalAlignment="Center" 
@@ -357,6 +357,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -367,34 +369,37 @@
                     Style="{StaticResource PrimaryButtonStyle}" 
                     Click="Configuration_Click" 
                     Width="190" Margin="0,0,8,0"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                <Button x:Name="LinksButton" Content="📥 Links" 
-                        Style="{StaticResource PrimaryButtonStyle}" 
-                        Click="Downloads_Click" 
-                        Width="190" Margin="0,0,10,0"/>
-                <TextBlock x:Name="HelpLink" Text="📖 Help" 
-                           Foreground="{StaticResource AccentBrush}"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           Cursor="Hand"
-                           VerticalAlignment="Center"
-                           MouseEnter="HelpLink_MouseEnter"
-                           MouseLeave="HelpLink_MouseLeave"
-                           MouseLeftButtonDown="HelpLink_Click"/>
-            </StackPanel>
-            <Button x:Name="CopyLogButton" Grid.Column="3" Content="Copy Log" 
+            <Button x:Name="CheckForUpdatesButton" Grid.Column="1" Content="🔄 Check for Updates" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Click="CheckForUpdates_Click" 
+                    Width="160" Margin="0,0,8,0"/>
+            <Button x:Name="LinksButton" Grid.Column="2" Content="📥 Links" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Click="Downloads_Click" 
+                    Width="190" Margin="0,0,8,0"/>
+            <TextBlock x:Name="HelpLink" Grid.Column="3" Text="📖 Help" 
+                       Foreground="{StaticResource AccentBrush}"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Cursor="Hand"
+                       VerticalAlignment="Center"
+                       Margin="0,0,0,0"
+                       MouseEnter="HelpLink_MouseEnter"
+                       MouseLeave="HelpLink_MouseLeave"
+                       MouseLeftButtonDown="HelpLink_Click"/>
+            <Button x:Name="CopyLogButton" Grid.Column="5" Content="Copy Log" 
                     Style="{StaticResource PrimaryButtonStyle}" 
                     Padding="18,11"
                     MinWidth="120"
                     Click="CopyLog_Click" 
                     Margin="8,0,8,0"/>
-            <Button x:Name="SaveLogButton" Grid.Column="4" Content="Save Log" 
+            <Button x:Name="SaveLogButton" Grid.Column="6" Content="Save Log" 
                     Style="{StaticResource PrimaryButtonStyle}" 
                     Padding="18,11"
                     MinWidth="120"
                     Click="SaveLog_Click" 
                     Margin="0,0,8,0"/>
-            <Button x:Name="ExitButton" Grid.Column="5" Content="✕ Exit" 
+            <Button x:Name="ExitButton" Grid.Column="7" Content="✕ Exit" 
                     Style="{StaticResource PrimaryButtonStyle}" 
                     Click="Exit_Click" 
                     Width="150"/>

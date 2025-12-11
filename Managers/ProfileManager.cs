@@ -30,26 +30,33 @@ namespace IEVRModManager.Managers
             
             foreach (var file in profileFiles)
             {
-                try
+                var profile = LoadProfileFromFile(file);
+                if (profile != null)
                 {
-                    var json = File.ReadAllText(file);
-                    var profile = JsonSerializer.Deserialize<ModProfile>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    
-                    if (profile != null)
-                    {
-                        profiles.Add(profile);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error loading profile {file}: {ex.Message}");
+                    profiles.Add(profile);
                 }
             }
 
             return profiles.OrderByDescending(p => p.LastModifiedDate).ToList();
+        }
+
+        private ModProfile? LoadProfileFromFile(string filePath)
+        {
+            try
+            {
+                var json = File.ReadAllText(filePath);
+                var profile = JsonSerializer.Deserialize<ModProfile>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                
+                return profile;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading profile {filePath}: {ex.Message}");
+                return null;
+            }
         }
 
         public ModProfile? LoadProfile(string profileName)
@@ -61,20 +68,7 @@ namespace IEVRModManager.Managers
                 return null;
             }
 
-            try
-            {
-                var json = File.ReadAllText(filePath);
-                var profile = JsonSerializer.Deserialize<ModProfile>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-                return profile;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading profile {profileName}: {ex.Message}");
-                return null;
-            }
+            return LoadProfileFromFile(filePath);
         }
 
         public bool SaveProfile(ModProfile profile)
@@ -83,30 +77,11 @@ namespace IEVRModManager.Managers
             {
                 EnsureDirectoryExists(_profilesDir);
                 
-                // Sanitize profile name for filename
-                var safeName = SanitizeFileName(profile.Name);
-                if (string.IsNullOrWhiteSpace(safeName))
-                {
-                    safeName = "Unnamed";
-                }
-
+                var safeName = GetSafeProfileFileName(profile.Name);
                 var filePath = Path.Combine(_profilesDir, $"{safeName}.json");
                 
-                // Update last modified date
-                profile.LastModifiedDate = DateTime.Now;
-                if (profile.CreatedDate == DateTime.MinValue)
-                {
-                    profile.CreatedDate = DateTime.Now;
-                }
-
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                };
-
-                var json = JsonSerializer.Serialize(profile, options);
-                File.WriteAllText(filePath, json);
+                UpdateProfileDates(profile);
+                SaveProfileToFile(profile, filePath);
                 return true;
             }
             catch (Exception ex)
@@ -114,6 +89,33 @@ namespace IEVRModManager.Managers
                 System.Diagnostics.Debug.WriteLine($"Error saving profile: {ex.Message}");
                 return false;
             }
+        }
+
+        private string GetSafeProfileFileName(string profileName)
+        {
+            var safeName = SanitizeFileName(profileName);
+            return string.IsNullOrWhiteSpace(safeName) ? "Unnamed" : safeName;
+        }
+
+        private void UpdateProfileDates(ModProfile profile)
+        {
+            profile.LastModifiedDate = DateTime.Now;
+            if (profile.CreatedDate == DateTime.MinValue)
+            {
+                profile.CreatedDate = DateTime.Now;
+            }
+        }
+
+        private void SaveProfileToFile(ModProfile profile, string filePath)
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            var json = JsonSerializer.Serialize(profile, options);
+            File.WriteAllText(filePath, json);
         }
 
         public bool DeleteProfile(string profileName)

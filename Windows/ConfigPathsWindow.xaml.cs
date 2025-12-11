@@ -232,7 +232,7 @@ namespace IEVRModManager.Windows
             TryOpenFolder(Config.SharedStorageViolaDir);
         }
 
-        private static void TryOpenFolder(string path)
+        private void TryOpenFolder(string path)
         {
             try
             {
@@ -249,8 +249,11 @@ namespace IEVRModManager.Windows
             }
             catch (System.Exception ex)
             {
-                System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("CouldNotOpenFolder"), ex.Message), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
         }
 
@@ -276,8 +279,11 @@ namespace IEVRModManager.Windows
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Error creating backup: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("ErrorCreatingBackup"), ex.Message), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
         }
 
@@ -303,8 +309,11 @@ namespace IEVRModManager.Windows
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Error restoring backup: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("ErrorRestoringBackup"), ex.Message), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
         }
     }

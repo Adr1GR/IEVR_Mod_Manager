@@ -22,29 +22,56 @@ namespace IEVRModManager.Managers
             var modsRoot = Path.GetFullPath(_modsDir);
             Directory.CreateDirectory(modsRoot);
 
-            // Get all mod directories
-            var modNames = Directory.GetDirectories(modsRoot)
+            var modNames = GetModDirectoryNames(modsRoot);
+            var enabledStateMap = BuildEnabledStateMap(savedMods, existingEntries);
+            var orderedNames = DetermineModOrder(modNames, savedMods, existingEntries);
+
+            return CreateModEntries(orderedNames, modsRoot, enabledStateMap);
+        }
+
+        private List<string> GetModDirectoryNames(string modsRoot)
+        {
+            return Directory.GetDirectories(modsRoot)
                 .Select(d => Path.GetFileName(d))
                 .Where(name => !string.IsNullOrEmpty(name))
                 .ToList();
+        }
 
-            // Preserve enabled state from existing entries
-            var oldMap = (existingEntries ?? new List<ModEntry>())
-                .ToDictionary(me => me.Name, me => me.Enabled);
+        private Dictionary<string, bool> BuildEnabledStateMap(List<ModData>? savedMods, List<ModEntry>? existingEntries)
+        {
+            var stateMap = new Dictionary<string, bool>();
 
-            // Preserve enabled state from saved config
-            var savedMap = (savedMods ?? new List<ModData>())
-                .ToDictionary(m => m.Name, m => m.Enabled);
+            // Priority: existing entries > saved config > default (true)
+            if (existingEntries != null)
+            {
+                foreach (var entry in existingEntries)
+                {
+                    stateMap[entry.Name] = entry.Enabled;
+                }
+            }
 
-            // Preserve order from existing entries (current UI order) if available
-            // Otherwise fall back to saved config order
-            List<string> orderedNames;
+            if (savedMods != null)
+            {
+                foreach (var mod in savedMods)
+                {
+                    if (!stateMap.ContainsKey(mod.Name))
+                    {
+                        stateMap[mod.Name] = mod.Enabled;
+                    }
+                }
+            }
+
+            return stateMap;
+        }
+
+        private List<string> DetermineModOrder(List<string> modNames, List<ModData>? savedMods, List<ModEntry>? existingEntries)
+        {
             if (existingEntries != null && existingEntries.Count > 0)
             {
                 // Use the current order of existing entries
                 var existingOrder = existingEntries
                     .Select(me => me.Name)
-                    .Where(n => modNames.Contains(n)) // Only keep mods that still exist
+                    .Where(modNames.Contains)
                     .ToList();
                 
                 // Add new mods at the end
@@ -52,52 +79,39 @@ namespace IEVRModManager.Managers
                     .Where(n => !existingOrder.Contains(n))
                     .ToList();
                 
-                orderedNames = existingOrder.Concat(newMods).ToList();
-            }
-            else
-            {
-                // Fall back to saved config order if no existing entries
-                var savedOrder = (savedMods ?? new List<ModData>())
-                    .Select(m => m.Name)
-                    .ToList();
-
-                orderedNames = savedOrder
-                    .Where(n => modNames.Contains(n))
-                    .Concat(modNames.Where(n => !savedOrder.Contains(n)))
-                    .ToList();
+                return existingOrder.Concat(newMods).ToList();
             }
 
-            // Create mod entries
+            // Fall back to saved config order if no existing entries
+            var savedOrder = (savedMods ?? new List<ModData>())
+                .Select(m => m.Name)
+                .ToList();
+
+            return savedOrder
+                .Where(modNames.Contains)
+                .Concat(modNames.Where(n => !savedOrder.Contains(n)))
+                .ToList();
+        }
+
+        private List<ModEntry> CreateModEntries(List<string> orderedNames, string modsRoot, Dictionary<string, bool> enabledStateMap)
+        {
             var modEntries = new List<ModEntry>();
+            
             foreach (var name in orderedNames)
             {
                 var modPath = Path.Combine(modsRoot, name);
-                var modData = LoadModMetadata(modPath);
-
-                // Determine enabled state (priority: existing > saved > default)
-                bool enabled;
-                if (oldMap.ContainsKey(name))
-                {
-                    enabled = oldMap[name];
-                }
-                else if (savedMap.ContainsKey(name))
-                {
-                    enabled = savedMap[name];
-                }
-                else
-                {
-                    enabled = true;
-                }
+                var metadata = LoadModMetadata(modPath);
+                var enabled = enabledStateMap.GetValueOrDefault(name, true);
 
                 var modEntry = new ModEntry(
                     name: name,
                     path: modsRoot,
                     enabled: enabled,
-                    displayName: modData.DisplayName,
-                    author: modData.Author,
-                    modVersion: modData.ModVersion,
-                    gameVersion: modData.GameVersion,
-                    modLink: modData.ModLink
+                    displayName: metadata.DisplayName,
+                    author: metadata.Author,
+                    modVersion: metadata.ModVersion,
+                    gameVersion: metadata.GameVersion,
+                    modLink: metadata.ModLink
                 );
                 modEntries.Add(modEntry);
             }
@@ -164,23 +178,10 @@ namespace IEVRModManager.Managers
         public List<string> DetectPacksModifiers(List<ModEntry> modEntries)
         {
             var modsTouchingPacks = new List<string>();
+            
             foreach (var mod in modEntries.Where(me => me.Enabled))
             {
-                var dataPath = Path.Combine(mod.FullPath, "data");
-                if (!Directory.Exists(dataPath))
-                {
-                    continue;
-                }
-
-                var files = Directory.GetFiles(dataPath, "*", SearchOption.AllDirectories);
-                var touchesPacks = files.Any(filePath =>
-                {
-                    var relativePath = Path.GetRelativePath(dataPath, filePath)
-                        .Replace('\\', '/');
-                    return relativePath.StartsWith("packs/", StringComparison.OrdinalIgnoreCase);
-                });
-
-                if (touchesPacks)
+                if (ModTouchesPacksFolder(mod))
                 {
                     var displayName = string.IsNullOrWhiteSpace(mod.DisplayName) ? mod.Name : mod.DisplayName;
                     modsTouchingPacks.Add(displayName);
@@ -190,6 +191,23 @@ namespace IEVRModManager.Managers
             return modsTouchingPacks
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private bool ModTouchesPacksFolder(ModEntry mod)
+        {
+            var dataPath = Path.Combine(mod.FullPath, "data");
+            if (!Directory.Exists(dataPath))
+            {
+                return false;
+            }
+
+            var files = Directory.GetFiles(dataPath, "*", SearchOption.AllDirectories);
+            return files.Any(filePath =>
+            {
+                var relativePath = Path.GetRelativePath(dataPath, filePath)
+                    .Replace('\\', '/');
+                return relativePath.StartsWith("packs/", StringComparison.OrdinalIgnoreCase);
+            });
         }
 
         public Dictionary<string, List<string>> DetectFileConflicts(List<ModEntry> modEntries)
@@ -203,7 +221,12 @@ namespace IEVRModManager.Managers
                 return conflicts;
             }
 
-            // Dictionary to track which mods have each file
+            var fileToModsMap = BuildFileToModsMap(enabledMods);
+            return ExtractConflicts(fileToModsMap);
+        }
+
+        private Dictionary<string, HashSet<string>> BuildFileToModsMap(List<ModEntry> enabledMods)
+        {
             var fileToModsMap = new Dictionary<string, HashSet<string>>();
 
             foreach (var mod in enabledMods)
@@ -214,15 +237,12 @@ namespace IEVRModManager.Managers
                     continue;
                 }
 
-                // Get all files in the mod's data folder
                 var files = Directory.GetFiles(modDataPath, "*", SearchOption.AllDirectories);
                 
                 foreach (var filePath in files)
                 {
-                    // Get relative path from the data folder
-                    var relativePath = Path.GetRelativePath(modDataPath, filePath);
-                    // Normalize path separators for consistency
-                    relativePath = relativePath.Replace('\\', '/');
+                    var relativePath = Path.GetRelativePath(modDataPath, filePath)
+                        .Replace('\\', '/');
 
                     if (!fileToModsMap.ContainsKey(relativePath))
                     {
@@ -233,10 +253,18 @@ namespace IEVRModManager.Managers
                 }
             }
 
-            // Find files that are in multiple mods
+            return fileToModsMap;
+        }
+
+        private Dictionary<string, List<string>> ExtractConflicts(Dictionary<string, HashSet<string>> fileToModsMap)
+        {
+            var conflicts = new Dictionary<string, List<string>>();
+            const string cpkListFileName = "cpk_list.cfg.bin";
+
             foreach (var kvp in fileToModsMap)
             {
-                if (kvp.Key.Equals("cpk_list.cfg.bin", StringComparison.OrdinalIgnoreCase))
+                // Skip cpk_list.cfg.bin as it's expected to be in multiple mods
+                if (kvp.Key.Equals(cpkListFileName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }

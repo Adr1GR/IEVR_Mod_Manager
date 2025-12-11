@@ -179,8 +179,11 @@ namespace IEVRModManager.Windows
                 FooterText.Text = "Check your connection and try again.";
                 _mods.Clear();
                 _mainWindow?.LogMessage($"Could not fetch mods from GameBanana: {ex.Message}", "error");
-                MessageBox.Show("Could not fetch mods from GameBanana.", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    LocalizationHelper.GetString("CouldNotFetchGameBananaMods"), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
             finally
             {
@@ -471,8 +474,11 @@ namespace IEVRModManager.Windows
 
             if (string.IsNullOrWhiteSpace(mod.DownloadUrl))
             {
-                MessageBox.Show("No download URL found for this mod.", "Info",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var infoWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("InfoTitle"), 
+                    LocalizationHelper.GetString("NoDownloadUrlFound"), 
+                    MessageType.Info);
+                infoWindow.ShowDialog();
                 return;
             }
 
@@ -509,14 +515,20 @@ namespace IEVRModManager.Windows
                 }
 
                 _mainWindow?.LogMessage($"Downloaded {mod.Name} to {targetDir}", "success");
-                MessageBox.Show($"Download complete: {mod.Name}", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var successWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("SuccessTitle"), 
+                    string.Format(LocalizationHelper.GetString("DownloadComplete"), mod.Name), 
+                    MessageType.Success);
+                successWindow.ShowDialog();
             }
             catch (Exception ex)
             {
                 _mainWindow?.LogMessage($"Failed to download {mod.Name}: {ex.Message}", "error");
-                MessageBox.Show($"Could not download the mod.\n{ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("CouldNotDownloadMod"), ex.Message), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
         }
 
@@ -562,8 +574,11 @@ namespace IEVRModManager.Windows
             }
             else
             {
-                MessageBox.Show("Select a mod to download.", "Info",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var infoWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("InfoTitle"), 
+                    LocalizationHelper.GetString("SelectModToDownload"), 
+                    MessageType.Info);
+                infoWindow.ShowDialog();
             }
         }
 
@@ -601,8 +616,11 @@ namespace IEVRModManager.Windows
             var target = string.IsNullOrWhiteSpace(mod.PageUrl) ? mod.DownloadUrl : mod.PageUrl;
             if (string.IsNullOrWhiteSpace(target))
             {
-                MessageBox.Show("No link available for this mod.", "Info",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var infoWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("InfoTitle"), 
+                    LocalizationHelper.GetString("NoLinkAvailable"), 
+                    MessageType.Info);
+                infoWindow.ShowDialog();
                 return;
             }
 
