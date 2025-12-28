@@ -31,11 +31,15 @@
     </None>
     <EmbeddedResource Include="Resources\Strings.yaml" />
     <EmbeddedResource Include="Resources\Strings.es-ES.yaml" />
+    <EmbeddedResource Include="Resources\Strings.fr-FR.yaml" />
     <!-- Also copy to output for development -->
     <None Update="Resources\Strings.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Strings.es-ES.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Strings.fr-FR.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

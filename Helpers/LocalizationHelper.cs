@@ -81,6 +81,7 @@ namespace IEVRModManager.Helpers
 
             var defaultPath = Path.Combine(resourcesDir, "Strings.yaml");
             var spanishPath = Path.Combine(resourcesDir, "Strings.es-ES.yaml");
+            var frenchPath = Path.Combine(resourcesDir, "Strings.fr-FR.yaml");
             bool loadedAny = false;
 
             if (File.Exists(defaultPath))
@@ -92,6 +93,12 @@ namespace IEVRModManager.Helpers
             if (File.Exists(spanishPath))
             {
                 _allStrings["es-ES"] = LoadYamlFile(spanishPath);
+                loadedAny = true;
+            }
+
+            if (File.Exists(frenchPath))
+            {
+                _allStrings["fr-FR"] = LoadYamlFile(frenchPath);
                 loadedAny = true;
             }
 
@@ -115,6 +122,12 @@ namespace IEVRModManager.Helpers
             if (spanishResource != null && spanishResource.Count > 0)
             {
                 _allStrings["es-ES"] = spanishResource;
+            }
+
+            var frenchResource = LoadYamlFromEmbeddedResource("IEVRModManager.Resources.Strings.fr-FR.yaml");
+            if (frenchResource != null && frenchResource.Count > 0)
+            {
+                _allStrings["fr-FR"] = frenchResource;
             }
         }
 

@@ -12,20 +12,38 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <Button x:Name="RefreshButton"
+                    Grid.Column="0"
                     Content="⟳ Refresh"
                     Style="{StaticResource PrimaryButtonStyle}"
                     Click="Refresh_Click"
                     Width="130"
                     Margin="0,0,8,0"/>
+            <TextBlock x:Name="SearchLabel"
+                       Grid.Column="1"
+                       Text="Search"
+                       VerticalAlignment="Center"
+                       Foreground="{StaticResource TextBrush}"
+                       Margin="6,0,6,0"/>
+            <TextBox x:Name="SearchBox"
+                     Grid.Column="2"
+                     Width="260"
+                     Margin="0,0,12,0"
+                     TextChanged="SearchBox_TextChanged"/>
             <TextBlock x:Name="StatusText"
+                       Grid.Column="3"
                        VerticalAlignment="Center"
                        Foreground="{StaticResource TextBrush}"
                        FontWeight="Bold"
-                       Text="Loading mods..."
-                       Margin="8,0,0,0"/>
-        </StackPanel>
+                       Text="Loading mods..."/>
+        </Grid>
 
         <ListBox x:Name="ModsList"
                  Grid.Row="1"
@@ -114,11 +132,34 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <TextBlock Grid.Row="2"
-                   x:Name="FooterText"
-                   Text="Double click opens the mod page."
-                   Foreground="{StaticResource TextBrush}"
-                   Margin="0,10,0,0"
-                   Loaded="FooterText_Loaded"/>
+        <Grid Grid.Row="2" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="FooterText"
+                       Grid.Column="0"
+                       Text="Double click opens the mod page."
+                       Foreground="{StaticResource TextBrush}"
+                       Loaded="FooterText_Loaded"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="PrevPageButton"
+                        Content="Previous"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Width="110"
+                        Margin="0,0,8,0"
+                        Click="PrevPage_Click"/>
+                <TextBlock x:Name="PageIndicator"
+                           Text="Page 1"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource TextBrush}"
+                           Margin="0,0,8,0"/>
+                <Button x:Name="NextPageButton"
+                        Content="Next"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Width="110"
+                        Click="NextPage_Click"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
