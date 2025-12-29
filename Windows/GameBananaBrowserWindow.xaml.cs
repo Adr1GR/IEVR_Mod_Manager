@@ -24,12 +24,14 @@ namespace IEVRModManager.Windows
         private int _currentPage = 1;
         private bool _isLoading;
         private const int SkeletonCount = 8;
+        private List<GameBananaMod> _pageMods = new();
+        private string _searchQuery = string.Empty;
         private static readonly HttpClient SharedHttpClient;
         private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
         private static readonly object CacheLock = new();
-        private static List<GameBananaMod> _cachedMods = new();
-        private static DateTime _cacheTimestamp = DateTime.MinValue;
-        private static Task<List<GameBananaMod>>? _inflightFetch;
+        private static readonly Dictionary<int, List<GameBananaMod>> _cachedModsByPage = new();
+        private static readonly Dictionary<int, DateTime> _cacheTimestampByPage = new();
+        private static readonly Dictionary<int, Task<List<GameBananaMod>>> _inflightFetchByPage = new();
 
         static GameBananaBrowserWindow()
         {
@@ -60,8 +62,12 @@ namespace IEVRModManager.Windows
         {
             Title = LocalizationHelper.GetString("GameBananaMods");
             RefreshButton.Content = LocalizationHelper.GetString("Refresh");
+            SearchLabel.Text = LocalizationHelper.GetString("Search");
             StatusText.Text = LocalizationHelper.GetString("LoadingMods");
             FooterText.Text = LocalizationHelper.GetString("DoubleClickOpensModPage");
+            PrevPageButton.Content = LocalizationHelper.GetString("PreviousPage");
+            NextPageButton.Content = LocalizationHelper.GetString("NextPage");
+            PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
         }
         
         private void FooterText_Loaded(object sender, RoutedEventArgs e)
@@ -71,6 +77,7 @@ namespace IEVRModManager.Windows
 
         private void ShowSkeletonPlaceholders()
         {
+            _pageMods = new List<GameBananaMod>();
             _mods.Clear();
             for (var i = 0; i < SkeletonCount; i++)
             {
@@ -86,7 +93,7 @@ namespace IEVRModManager.Windows
         {
             try
             {
-                var mods = await GetOrFetchModsAsync(owner, forceRefresh: false);
+                var mods = await GetOrFetchModsAsync(owner, 1, forceRefresh: false);
                 owner?.LogMessage($"Prefetched {mods.Count} mods from GameBanana.", "info");
             }
             catch (Exception ex)
@@ -109,43 +116,60 @@ namespace IEVRModManager.Windows
             }).ToList();
         }
 
-        private static bool CacheIsValid()
+        private static bool CacheIsValid(int page)
         {
-            return _cachedMods.Count > 0 && (DateTime.UtcNow - _cacheTimestamp) < CacheDuration;
+            return _cachedModsByPage.TryGetValue(page, out var mods)
+                && mods.Count > 0
+                && _cacheTimestampByPage.TryGetValue(page, out var timestamp)
+                && (DateTime.UtcNow - timestamp) < CacheDuration;
         }
 
-        private static Task<List<GameBananaMod>> StartFetchAsync(MainWindow? owner)
+        private static Task<List<GameBananaMod>> StartFetchAsync(MainWindow? owner, int page)
         {
-            _inflightFetch = FetchModsPageCoreAsync(owner, 1, PageSize);
-            return _inflightFetch;
+            var fetch = FetchModsPageCoreAsync(owner, page, PageSize);
+            _inflightFetchByPage[page] = fetch;
+            return fetch;
         }
 
-        private static async Task<List<GameBananaMod>> GetOrFetchModsAsync(MainWindow? owner, bool forceRefresh)
+        private static async Task<List<GameBananaMod>> GetOrFetchModsAsync(MainWindow? owner, int page, bool forceRefresh)
         {
             Task<List<GameBananaMod>>? fetchTask;
             lock (CacheLock)
             {
-                if (!forceRefresh && CacheIsValid())
+                if (!forceRefresh && CacheIsValid(page))
                 {
-                    return CloneMods(_cachedMods);
+                    return CloneMods(_cachedModsByPage[page]);
                 }
 
-                if (!forceRefresh && _inflightFetch != null)
+                if (!forceRefresh && _inflightFetchByPage.TryGetValue(page, out var inflight))
                 {
-                    fetchTask = _inflightFetch;
+                    fetchTask = inflight;
                 }
                 else
                 {
-                    fetchTask = StartFetchAsync(owner);
+                    fetchTask = StartFetchAsync(owner, page);
                 }
             }
 
-            var mods = await fetchTask;
+            List<GameBananaMod> mods;
+            try
+            {
+                mods = await fetchTask;
+            }
+            catch
+            {
+                lock (CacheLock)
+                {
+                    _inflightFetchByPage.Remove(page);
+                }
+                throw;
+            }
+
             lock (CacheLock)
             {
-                _cachedMods = mods;
-                _cacheTimestamp = DateTime.UtcNow;
-                _inflightFetch = null;
+                _cachedModsByPage[page] = mods;
+                _cacheTimestampByPage[page] = DateTime.UtcNow;
+                _inflightFetchByPage.Remove(page);
             }
             return CloneMods(mods);
         }
@@ -161,31 +185,23 @@ namespace IEVRModManager.Windows
             StatusText.Text = LocalizationHelper.GetString("LoadingMods");
             FooterText.Text = LocalizationHelper.GetString("FetchingGameBananaMods");
             ShowSkeletonPlaceholders();
+            PrevPageButton.IsEnabled = false;
+            NextPageButton.IsEnabled = false;
+            PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
+            var loadFailed = false;
 
             try
             {
-                var mods = await GetOrFetchModsAsync(_mainWindow, forceRefresh);
-                _mods.Clear();
-                foreach (var mod in mods)
-                {
-                    _mods.Add(mod);
-                }
-
-                StatusText.Text = string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, _mods.Count);
-                if (_mods.Count == 0)
-                {
-                    FooterText.Text = "No mods found. Try refresh.";
-                }
-                else
-                {
-                    FooterText.Text = "Double click opens the mod page.";
-                }
+                var mods = await GetOrFetchModsAsync(_mainWindow, _currentPage, forceRefresh);
+                _pageMods = mods;
             }
             catch (Exception ex)
             {
-                StatusText.Text = "Failed to load mods.";
-                FooterText.Text = "Check your connection and try again.";
+                loadFailed = true;
+                StatusText.Text = LocalizationHelper.GetString("FailedToLoadMods");
+                FooterText.Text = LocalizationHelper.GetString("CheckConnectionAndTryAgain");
                 _mods.Clear();
+                _pageMods = new List<GameBananaMod>();
                 _mainWindow?.LogMessage($"Could not fetch mods from GameBanana: {ex.Message}", "error");
                 var errorWindow = new MessageWindow(this, 
                     LocalizationHelper.GetString("ErrorTitle"), 
@@ -197,6 +213,79 @@ namespace IEVRModManager.Windows
             {
                 _isLoading = false;
             }
+
+            if (!loadFailed)
+            {
+                FooterText.Text = _pageMods.Count == 0
+                    ? LocalizationHelper.GetString("NoModsFound")
+                    : LocalizationHelper.GetString("DoubleClickOpensModPage");
+                ApplySearchFilter();
+            }
+            else
+            {
+                UpdatePageControls(0, 0);
+                StatusText.Text = LocalizationHelper.GetString("FailedToLoadMods");
+            }
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _searchQuery = SearchBox.Text?.Trim() ?? string.Empty;
+            if (_isLoading)
+            {
+                return;
+            }
+            ApplySearchFilter();
+        }
+
+        private void ApplySearchFilter()
+        {
+            IEnumerable<GameBananaMod> filtered = _pageMods;
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                filtered = filtered.Where(m =>
+                    (!string.IsNullOrWhiteSpace(m.Name) && m.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
+                    || m.Id.ToString().Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var filteredList = filtered.ToList();
+            _mods.Clear();
+            foreach (var mod in filteredList)
+            {
+                _mods.Add(mod);
+            }
+
+            UpdatePageControls(filteredList.Count, _pageMods.Count);
+        }
+
+        private void UpdatePageControls(int filteredCount, int totalCount)
+        {
+            PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
+            StatusText.Text = string.IsNullOrWhiteSpace(_searchQuery)
+                ? string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, totalCount)
+                : string.Format(LocalizationHelper.GetString("PageModsCountFiltered"), _currentPage, filteredCount, totalCount);
+            PrevPageButton.IsEnabled = !_isLoading && _currentPage > 1;
+            NextPageButton.IsEnabled = !_isLoading && totalCount >= PageSize;
+        }
+
+        private async void PrevPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isLoading || _currentPage <= 1)
+            {
+                return;
+            }
+            _currentPage--;
+            await LoadModsAsync();
+        }
+
+        private async void NextPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isLoading)
+            {
+                return;
+            }
+            _currentPage++;
+            await LoadModsAsync();
         }
 
         private static async Task<List<GameBananaMod>> FetchModsPageCoreAsync(MainWindow? owner, int page, int pageSize)
@@ -258,7 +347,7 @@ namespace IEVRModManager.Windows
 
         private static async Task<List<GameBananaMod>> FetchModsFromSubfeedAsync(MainWindow? owner, int page, int pageSize)
         {
-            var url = $"https://gamebanana.com/apiv11/Game/20069/Subfeed?_nPage={page}&_nPerpage={pageSize}&_sSort=new&_csvModelInclusions=Mod";
+            var url = $"https://gamebanana.com/apiv11/Game/20069/Subfeed?_nPage={page}&_nPerPage={pageSize}&_sSort=new&_csvModelInclusions=Mod";
             using var response = await SharedHttpClient.GetAsync(url);
             var payload = await response.Content.ReadAsStringAsync();
 

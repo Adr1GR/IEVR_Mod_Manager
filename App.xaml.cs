@@ -96,9 +96,15 @@ namespace IEVRModManager
             resources.MergedDictionaries.Clear();
 
             var themeDict = new ResourceDictionary();
-            themeDict.Source = new Uri(
-                themeName == "Light" ? "Themes/LightTheme.xaml" : "Themes/DarkTheme.xaml",
-                UriKind.Relative);
+            var themePath = themeName switch
+            {
+                "Light" => "Themes/LightTheme.xaml",
+                "Dark" => "Themes/DarkTheme.xaml",
+                "Christmas" => "Themes/ChristmasTheme.xaml",
+                "Red" => "Themes/RedTheme.xaml",
+                _ => "Themes/DarkTheme.xaml"
+            };
+            themeDict.Source = new Uri(themePath, UriKind.Relative);
             resources.MergedDictionaries.Add(themeDict);
         }
 

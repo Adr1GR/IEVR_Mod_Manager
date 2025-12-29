@@ -149,6 +149,7 @@
                 <ComboBoxItem Content="System" Tag="System"/>
                 <ComboBoxItem Content="English" Tag="en-US"/>
                 <ComboBoxItem Content="Español" Tag="es-ES"/>
+                <ComboBoxItem Content="French" Tag="fr-FR"/>
             </ComboBox>
         </Grid>
 
@@ -216,6 +217,8 @@
                 <ComboBoxItem Content="System" Tag="System"/>
                 <ComboBoxItem Content="Light" Tag="Light"/>
                 <ComboBoxItem Content="Dark" Tag="Dark"/>
+                <ComboBoxItem Content="Christmas" Tag="Christmas"/>
+                <ComboBoxItem Content="Red" Tag="Red"/>
             </ComboBox>
         </Grid>
 

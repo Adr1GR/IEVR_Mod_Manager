@@ -108,6 +108,7 @@ namespace IEVRModManager.Windows
                     // Show modal with restart option (same as theme change)
                     string languageName = language == "System" ? LocalizationHelper.GetString("System") + " (follows OS language)" : 
                                          language == "en-US" ? LocalizationHelper.GetString("English") : 
+                                         language == "fr-FR" ? LocalizationHelper.GetString("French") :
                                          language == "es-ES" ? LocalizationHelper.GetString("Espanol") : language;
                     var themeWindow = new ThemeChangeWindow(this, string.Format(LocalizationHelper.GetString("LanguageChangedMessage"), languageName));
                     var result = themeWindow.ShowDialog();
@@ -147,7 +148,12 @@ namespace IEVRModManager.Windows
                     _saveCallback?.Invoke();
                     
                     // Show modal with restart option
-                    string themeName = theme == "System" ? LocalizationHelper.GetString("System") + " (follows OS theme)" : theme;
+                    string themeName = theme == "System" ? LocalizationHelper.GetString("System") + " (follows OS theme)" :
+                                       theme == "Light" ? LocalizationHelper.GetString("Light") :
+                                       theme == "Dark" ? LocalizationHelper.GetString("Dark") :
+                                       theme == "Christmas" ? LocalizationHelper.GetString("Christmas") :
+                                       theme == "Red" ? LocalizationHelper.GetString("Red") :
+                                       theme;
                     var themeWindow = new ThemeChangeWindow(this, themeName);
                     var result = themeWindow.ShowDialog();
                     
@@ -236,6 +242,8 @@ namespace IEVRModManager.Windows
                         item.Content = LocalizationHelper.GetString("System");
                     else if (item.Tag?.ToString() == "en-US")
                         item.Content = LocalizationHelper.GetString("English");
+                    else if (item.Tag?.ToString() == "fr-FR")
+                        item.Content = LocalizationHelper.GetString("French");
                     else if (item.Tag?.ToString() == "es-ES")
                         item.Content = LocalizationHelper.GetString("Espanol");
                 }
@@ -251,6 +259,10 @@ namespace IEVRModManager.Windows
                         item.Content = LocalizationHelper.GetString("Light");
                     else if (item.Tag?.ToString() == "Dark")
                         item.Content = LocalizationHelper.GetString("Dark");
+                    else if (item.Tag?.ToString() == "Christmas")
+                        item.Content = LocalizationHelper.GetString("Christmas");
+                    else if (item.Tag?.ToString() == "Red")
+                        item.Content = LocalizationHelper.GetString("Red");
                 }
             }
         }
