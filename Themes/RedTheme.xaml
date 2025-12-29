@@ -152,6 +152,7 @@
                 <ControlTemplate TargetType="ComboBox">
                     <Grid>
                         <ToggleButton x:Name="ToggleButton"
+                                      Grid.Column="2"
                                       Focusable="False"
                                       IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                       ClickMode="Press"
@@ -167,7 +168,9 @@
                                                   Margin="{TemplateBinding Padding}"
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Left"
-                                                  Content="{TemplateBinding SelectionBoxItem}"/>
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
                                 <Path Grid.Column="1"
                                       Margin="0,0,6,0"
                                       VerticalAlignment="Center"
@@ -183,12 +186,14 @@
                                Focusable="False"
                                PopupAnimation="Slide">
                             <Grid MaxHeight="240"
-                                  Background="{StaticResource CardBgBrush}">
+                                  Background="{StaticResource CardBgBrush}"
+                                  SnapsToDevicePixels="True">
                                 <Border Margin="0,2,0,0"
                                         Background="{StaticResource CardBgBrush}"
                                         BorderBrush="{StaticResource BorderBrush}"
                                         BorderThickness="1">
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                    <ScrollViewer Margin="0"
+                                                  VerticalScrollBarVisibility="Auto"
                                                   HorizontalScrollBarVisibility="Disabled">
                                         <ItemsPresenter/>
                                     </ScrollViewer>
@@ -200,6 +205,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ToggleButton" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextBrightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.6"/>
