@@ -195,6 +195,8 @@ namespace IEVRModManager
                 // Update buttons
                 if (OpenModsFolderButton != null)
                     OpenModsFolderButton.Content = LocalizationHelper.GetString("OpenModsFolder");
+                if (RefreshModsButton != null)
+                    RefreshModsButton.Content = LocalizationHelper.GetString("ScanMods");
                 if (VersionLabel != null)
                     VersionLabel.Content = LocalizationHelper.GetString("Version");
                 if (ApplyButton != null)

@@ -167,6 +167,10 @@
                             Padding="18,11"
                             MinWidth="170"
                             Click="OpenModsFolder_Click" Margin="0,0,6,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    <Button x:Name="RefreshModsButton" Content="🔄 Refresh Mods" Style="{StaticResource PrimaryButtonStyle}" 
+                            Padding="18,11"
+                            MinWidth="150"
+                            Click="ScanMods_Click" Margin="6,0,6,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                     <Button x:Name="BrowseModsButton" Content="🧭 Browse mods" Style="{StaticResource PrimaryButtonStyle}" 
                             Padding="18,11"
                             MinWidth="150"
