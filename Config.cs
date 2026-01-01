@@ -48,8 +48,8 @@ namespace IEVRModManager
         /// </summary>
         public const string BackupDirName = "backup";
 
-        private static readonly string BaseDataPath =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".ievrModManager");
+        private static string? _baseDir;
+        private static readonly object _baseDirLock = new object();
 
         /// <summary>
         /// Gets the base directory path where application data is stored.
@@ -58,8 +58,18 @@ namespace IEVRModManager
         {
             get
             {
-                EnsureDirectoryExists(BaseDataPath);
-                return BaseDataPath;
+                if (_baseDir == null)
+                {
+                    lock (_baseDirLock)
+                    {
+                        if (_baseDir == null)
+                        {
+                            _baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".ievrModManager");
+                            EnsureDirectoryExists(_baseDir);
+                        }
+                    }
+                }
+                return _baseDir;
             }
         }
 
@@ -103,10 +113,6 @@ namespace IEVRModManager
         /// </summary>
         public static string BackupDir => EnsureDirectory(Path.Combine(BaseDir, BackupDirName));
         
-        /// <summary>
-        /// Gets the application data directory path (alias for <see cref="BaseDir"/>).
-        /// </summary>
-        public static string AppDataDir => BaseDir;
 
         /// <summary>
         /// The default window title for the application.
@@ -136,7 +142,7 @@ namespace IEVRModManager
         /// <summary>
         /// The URL to the latest Viola release on GitHub.
         /// </summary>
-        public const string ViolaReleaseUrl = "https://github.com/skythebro/Viola/releases/latest";
+        public const string ViolaReleaseUrl = "https://github.com/Adr1GR/Viola/releases/tag/v1.4.2";
         
         /// <summary>
         /// The URL to the CPK list directory on GitHub.

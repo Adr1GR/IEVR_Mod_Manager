@@ -160,9 +160,9 @@ namespace IEVRModManager.Managers
             var progressTask = Task.Run(async () =>
             {
                 const int startProgress = 10;
-                const int endProgress = 45;
-                const int updateIntervalMs = 150; // Update every 150ms for smoother progress
-                const int cycleDurationMs = 30000; // Complete cycle over 30 seconds
+                const int endProgress = 40;
+                const int updateIntervalMs = 50;
+                const int cycleDurationMs = 15000;
                 const int steps = cycleDurationMs / updateIntervalMs;
                 
                 try
@@ -173,8 +173,6 @@ namespace IEVRModManager.Managers
                         if (_currentProcess == null || _currentProcess.HasExited)
                             break;
                         
-                        // Calculate progress: oscillate between startProgress and endProgress
-                        // Each cycle takes 30 seconds, then repeats
                         int stepInCycle = cycle % steps;
                         var progress = startProgress + (int)((endProgress - startProgress) * (stepInCycle / (double)steps));
                         _progressCallback?.Invoke(progress, "MergingMods");

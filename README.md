@@ -36,7 +36,7 @@ A mod manager for **Inazuma Eleven Victory Road**.
 
 - **.NET 8 Desktop Runtime** (needed to run the app; small download from Microsoft)
 - **Inazuma Eleven Victory Road** installed on your system
-- **Viola.CLI-Portable.exe** - Download from [Viola releases](https://github.com/skythebro/Viola/releases/latest) and place a single copy in the shared `viola` folder (see First Time Setup)
+- **Viola.CLI-Portable.exe** - Download from [Viola releases](https://github.com/Adr1GR/Viola/releases/tag/v1.4.2) and place a single copy in the shared `viola` folder (see First Time Setup)
 - **cpk_list.cfg.bin** - Use the **Download cpk_list** button (recommended) or download from the [cpk_list repository](https://github.com/Adr1GR/IEVR_Mod_Manager/tree/main/cpk_list) and copy it into the shared `cpk` folder (you can keep multiple versions)
 
 ### Installation
@@ -366,5 +366,5 @@ dotnet run
 ## Credits
 
 - Mod Manager created by Adr1GR
-- Uses [Viola](https://github.com/skythebro/Viola) for CPK merging
+- Uses [Viola](https://github.com/Adr1GR/Viola) for CPK merging
 - Mods available on [GameBanana](https://gamebanana.com/mods/games/20069)

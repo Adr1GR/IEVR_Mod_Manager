@@ -29,7 +29,6 @@ namespace IEVRModManager
         {
             EnsureBaseDirectory();
             
-            // Initialize logger
             var logger = Helpers.Logger.Instance;
             logger.SetMinimumLevel(LogLevel.Info);
             logger.SetFileLogging(true);
@@ -158,12 +157,18 @@ namespace IEVRModManager
         {
             try
             {
-                Directory.CreateDirectory(Config.BaseDir);
-                Directory.SetCurrentDirectory(Config.BaseDir);
+                FileSystemHelper.EnsureDirectoryExists(Config.BaseDir);
             }
             catch (Exception ex)
             {
-                Helpers.Logger.Instance.Log(LogLevel.Error, "Failed to ensure base directory", true, ex);
+                System.Diagnostics.Debug.WriteLine($"Failed to ensure base directory: {ex.Message}");
+                try
+                {
+                    Helpers.Logger.Instance?.Log(LogLevel.Error, "Failed to ensure base directory", true, ex);
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -173,8 +178,6 @@ namespace IEVRModManager
         /// <param name="e">The exit event arguments.</param>
         protected override void OnExit(ExitEventArgs e)
         {
-            // Dispose HttpClient instances to prevent socket exhaustion
-            // Use fully qualified names to avoid conflicts with WPF Window types
             IEVRModManager.MainWindow.DisposeHttpClient();
             IEVRModManager.Managers.AppUpdateManager.DisposeHttpClient();
             IEVRModManager.Windows.GameBananaBrowserWindow.DisposeHttpClient();

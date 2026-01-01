@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using IEVRModManager.Models;
 using IEVRModManager.Helpers;
 using IEVRModManager.Exceptions;
@@ -27,7 +28,7 @@ namespace IEVRModManager.Managers
         /// </summary>
         public ProfileManager()
         {
-            _profilesDir = Path.Combine(Config.AppDataDir, "Profiles");
+            _profilesDir = Path.Combine(Config.BaseDir, "Profiles");
             FileSystemHelper.EnsureDirectoryExists(_profilesDir);
         }
 
@@ -103,6 +104,49 @@ namespace IEVRModManager.Managers
             }
         }
 
+        private async Task<ModProfile?> LoadProfileFromFileAsync(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    return null;
+                }
+
+                var json = await File.ReadAllTextAsync(filePath);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return null;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return JsonSerializer.Deserialize<ModProfile>(json, options);
+            }
+            catch (JsonException ex)
+            {
+                Instance.Log(LogLevel.Warning, $"Error parsing profile JSON {filePath}", true, ex);
+                return null;
+            }
+            catch (IOException ex)
+            {
+                Instance.Log(LogLevel.Warning, $"IO error loading profile {filePath}", true, ex);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Instance.Log(LogLevel.Warning, $"Unexpected error loading profile {filePath}", true, ex);
+                return null;
+            }
+        }
+
         /// <summary>
         /// Loads a mod profile by name.
         /// </summary>
@@ -133,6 +177,9 @@ namespace IEVRModManager.Managers
         /// <returns><c>true</c> if the profile was saved successfully; otherwise, <c>false</c>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="profile"/> is null.</exception>
         /// <exception cref="ModManagerException">Thrown when there's an error saving the profile file.</exception>
+        /// <remarks>
+        /// This method is provided for backward compatibility. For async contexts, use <see cref="SaveProfileAsync"/> instead.
+        /// </remarks>
         public bool SaveProfile(ModProfile profile)
         {
             if (profile == null)
@@ -151,20 +198,42 @@ namespace IEVRModManager.Managers
                 SaveProfileToFile(profile, filePath);
                 return true;
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                Instance.Log(LogLevel.Error, "IO error saving profile", true, ex);
-                throw new ModManagerException("Failed to save profile. Check file permissions.", ex);
+                HandleFileOperationException(ex, "saving profile");
+                return false; // Never reached, but satisfies compiler
             }
-            catch (UnauthorizedAccessException ex)
+        }
+
+        /// <summary>
+        /// Saves a mod profile to disk asynchronously.
+        /// </summary>
+        /// <param name="profile">The profile to save.</param>
+        /// <returns><c>true</c> if the profile was saved successfully; otherwise, <c>false</c>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="profile"/> is null.</exception>
+        /// <exception cref="ModManagerException">Thrown when there's an error saving the profile file.</exception>
+        public async Task<bool> SaveProfileAsync(ModProfile profile)
+        {
+            if (profile == null)
             {
-                Instance.Log(LogLevel.Error, "Access denied saving profile", true, ex);
-                throw new ModManagerException("Access denied to profile directory.", ex);
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            try
+            {
+                FileSystemHelper.EnsureDirectoryExists(_profilesDir);
+                
+                var safeName = GetSafeProfileFileName(profile.Name);
+                var filePath = Path.Combine(_profilesDir, $"{safeName}.json");
+                
+                UpdateProfileDates(profile);
+                await SaveProfileToFileAsync(profile, filePath);
+                return true;
             }
             catch (Exception ex)
             {
-                Instance.Log(LogLevel.Error, "Unexpected error saving profile", true, ex);
-                throw new ModManagerException("An unexpected error occurred while saving profile.", ex);
+                HandleFileOperationException(ex, "saving profile");
+                return false; // Never reached, but satisfies compiler
             }
         }
 
@@ -199,6 +268,22 @@ namespace IEVRModManager.Managers
             File.WriteAllText(filePath, json);
         }
 
+        private async Task SaveProfileToFileAsync(ModProfile profile, string filePath)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+            }
+
+            var json = JsonSerializer.Serialize(profile, JsonOptions);
+            await File.WriteAllTextAsync(filePath, json);
+        }
+
         /// <summary>
         /// Deletes a mod profile from disk.
         /// </summary>
@@ -225,20 +310,10 @@ namespace IEVRModManager.Managers
                 
                 return false;
             }
-            catch (IOException ex)
-            {
-                Instance.Log(LogLevel.Error, $"IO error deleting profile {profileName}", true, ex);
-                throw new ModManagerException($"Failed to delete profile '{profileName}'. The file may be in use.", ex);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Instance.Log(LogLevel.Error, $"Access denied deleting profile {profileName}", true, ex);
-                throw new ModManagerException($"Access denied to delete profile '{profileName}'.", ex);
-            }
             catch (Exception ex)
             {
-                Instance.Log(LogLevel.Error, $"Unexpected error deleting profile {profileName}", true, ex);
-                throw new ModManagerException($"An unexpected error occurred while deleting profile '{profileName}'.", ex);
+                HandleFileOperationException(ex, $"deleting profile '{profileName}'");
+                return false; // Never reached, but satisfies compiler
             }
         }
 
@@ -262,6 +337,29 @@ namespace IEVRModManager.Managers
         {
             var safeName = SanitizeFileName(profileName);
             return Path.Combine(_profilesDir, $"{safeName}.json");
+        }
+
+        /// <summary>
+        /// Handles file operation exceptions by logging and throwing appropriate ModManagerException.
+        /// </summary>
+        private static void HandleFileOperationException(Exception ex, string operation)
+        {
+            switch (ex)
+            {
+                case IOException ioEx:
+                    Instance.Log(LogLevel.Error, $"IO error {operation}", true, ioEx);
+                    if (operation.Contains("delete"))
+                    {
+                        throw new ModManagerException($"Failed to {operation}. The file may be in use.", ioEx);
+                    }
+                    throw new ModManagerException($"Failed to {operation}. Check file permissions.", ioEx);
+                case UnauthorizedAccessException uaEx:
+                    Instance.Log(LogLevel.Error, $"Access denied {operation}", true, uaEx);
+                    throw new ModManagerException($"Access denied to {operation}.", uaEx);
+                default:
+                    Instance.Log(LogLevel.Error, $"Unexpected error {operation}", true, ex);
+                    throw new ModManagerException($"An unexpected error occurred while {operation}.", ex);
+            }
         }
 
         private static string SanitizeFileName(string fileName)

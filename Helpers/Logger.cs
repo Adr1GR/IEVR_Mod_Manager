@@ -90,7 +90,7 @@ namespace IEVRModManager.Helpers
             
             FileSystemHelper.EnsureDirectoryExists(_logDirectory);
             
-            _writerTask = Task.Run(() => ProcessLogQueue(_cancellationTokenSource.Token));
+            _writerTask = Task.Run(async () => await ProcessLogQueue(_cancellationTokenSource.Token));
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace IEVRModManager.Helpers
             Log(level, message, false);
         }
 
-        private void ProcessLogQueue(CancellationToken cancellationToken)
+        private async Task ProcessLogQueue(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -274,7 +274,7 @@ namespace IEVRModManager.Helpers
                         WriteEntries(entries);
                     }
 
-                    Thread.Sleep(100); // Small delay to batch writes
+                    await Task.Delay(100, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -326,13 +326,6 @@ namespace IEVRModManager.Helpers
         }
 
         private string FormatMessage(LogEntry entry)
-        {
-            var timestamp = entry.Timestamp.ToString("HH:mm:ss");
-            var message = NormalizeMessage(entry.Message);
-            return $"[{timestamp}] {message}";
-        }
-
-        private string FormatMessage(LogEntry entry, LogLevel level)
         {
             var timestamp = entry.Timestamp.ToString("HH:mm:ss");
             var message = NormalizeMessage(entry.Message);
@@ -400,11 +393,12 @@ namespace IEVRModManager.Helpers
                     }
                 }
 
-                File.AppendAllText(_logFilePath, content, Encoding.UTF8);
+                // Use async method but run synchronously to avoid blocking the log queue processor
+                // This is acceptable here because we're already in a background task
+                File.AppendAllTextAsync(_logFilePath, content, Encoding.UTF8).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
-                // Silently fail - we don't want logging to break the application
                 System.Diagnostics.Debug.WriteLine($"[Logger] Failed to write to log file: {ex.Message}");
             }
         }

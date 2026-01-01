@@ -138,6 +138,8 @@ namespace IEVRModManager.Helpers
 
             try
             {
+                // Note: Using synchronous method here because this is called during initialization
+                // where async could cause deadlocks
                 var content = File.ReadAllText(vdfPath);
                 
                 // Parse libraryfolders.vdf format
@@ -196,6 +198,7 @@ namespace IEVRModManager.Helpers
                 if (File.Exists(appManifestPath))
                 {
                     // Read the manifest to get the install directory name
+                    // Note: Using synchronous method here because this is called during initialization
                     var manifestContent = File.ReadAllText(appManifestPath);
                     var installDirMatch = Regex.Match(manifestContent, @"""installdir""\s+""([^""]+)""", RegexOptions.IgnoreCase);
                     

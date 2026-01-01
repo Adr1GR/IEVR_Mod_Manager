@@ -277,6 +277,8 @@ namespace IEVRModManager.Helpers
             try
             {
                 // Try UTF-8 first, then fallback to default encoding
+                // Note: Using synchronous methods here because this is called from static constructor
+                // during initialization, where async would cause deadlocks
                 string yamlContent;
                 try
                 {
