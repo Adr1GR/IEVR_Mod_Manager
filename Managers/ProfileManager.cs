@@ -48,14 +48,16 @@ namespace IEVRModManager.Managers
                 .Select(profile =>
                 {
                     // Normalize empty or whitespace-only names to "Unnamed"
-                    if (string.IsNullOrWhiteSpace(profile!.Name))
+                    if (profile != null && string.IsNullOrWhiteSpace(profile.Name))
                     {
                         profile.Name = "Unnamed";
                     }
                     return profile;
                 })
-                .OrderByDescending(p => p!.LastModifiedDate)
-                .ToList()!;
+                .Where(profile => profile != null)
+                .Cast<ModProfile>() // Cast to non-nullable after filtering nulls
+                .OrderByDescending(p => p.LastModifiedDate)
+                .ToList();
         }
 
         private ModProfile? LoadProfileFromFile(string filePath)

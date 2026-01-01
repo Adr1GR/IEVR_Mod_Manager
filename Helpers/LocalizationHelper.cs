@@ -82,6 +82,8 @@ namespace IEVRModManager.Helpers
             var defaultPath = Path.Combine(resourcesDir, "Strings.yaml");
             var spanishPath = Path.Combine(resourcesDir, "Strings.es-ES.yaml");
             var frenchPath = Path.Combine(resourcesDir, "Strings.fr-FR.yaml");
+            var germanPath = Path.Combine(resourcesDir, "Strings.de-DE.yaml");
+            var japanesePath = Path.Combine(resourcesDir, "Strings.ja-JP.yaml");
             bool loadedAny = false;
 
             if (File.Exists(defaultPath))
@@ -100,6 +102,53 @@ namespace IEVRModManager.Helpers
             {
                 _allStrings["fr-FR"] = LoadYamlFile(frenchPath);
                 loadedAny = true;
+            }
+
+            if (File.Exists(germanPath))
+            {
+                var germanStrings = LoadYamlFile(germanPath);
+                if (germanStrings != null && germanStrings.Count > 0)
+                {
+                    _allStrings["de-DE"] = germanStrings;
+                    Instance.Log(LogLevel.Info, $"Successfully loaded {germanStrings.Count} German strings from {germanPath} and stored with key 'de-DE'", true);
+                    // Verify the key was stored correctly
+                    if (_allStrings.ContainsKey("de-DE"))
+                    {
+                        Instance.Log(LogLevel.Debug, $"Verified: 'de-DE' key exists in _allStrings with {_allStrings["de-DE"].Count} entries", true);
+                    }
+                    else
+                    {
+                        Instance.Log(LogLevel.Error, $"ERROR: 'de-DE' key was NOT stored in _allStrings!", true);
+                    }
+                }
+                else
+                {
+                    Instance.Log(LogLevel.Warning, $"German file {germanPath} exists but loaded 0 strings", true);
+                }
+                loadedAny = true;
+            }
+            else
+            {
+                Instance.Log(LogLevel.Warning, $"German file not found at {germanPath}", true);
+            }
+
+            if (File.Exists(japanesePath))
+            {
+                var japaneseStrings = LoadYamlFile(japanesePath);
+                if (japaneseStrings != null && japaneseStrings.Count > 0)
+                {
+                    _allStrings["ja-JP"] = japaneseStrings;
+                    Instance.Log(LogLevel.Info, $"Successfully loaded {japaneseStrings.Count} Japanese strings from {japanesePath} and stored with key 'ja-JP'", true);
+                }
+                else
+                {
+                    Instance.Log(LogLevel.Warning, $"Japanese file {japanesePath} exists but loaded 0 strings", true);
+                }
+                loadedAny = true;
+            }
+            else
+            {
+                Instance.Log(LogLevel.Debug, $"Japanese file not found at {japanesePath}", true);
             }
 
             return loadedAny;
@@ -128,6 +177,20 @@ namespace IEVRModManager.Helpers
             if (frenchResource != null && frenchResource.Count > 0)
             {
                 _allStrings["fr-FR"] = frenchResource;
+            }
+
+            var germanResource = LoadYamlFromEmbeddedResource("IEVRModManager.Resources.Strings.de-DE.yaml");
+            if (germanResource != null && germanResource.Count > 0)
+            {
+                _allStrings["de-DE"] = germanResource;
+                Instance.Log(LogLevel.Debug, $"Loaded {germanResource.Count} German strings from embedded resource", true);
+            }
+
+            var japaneseResource = LoadYamlFromEmbeddedResource("IEVRModManager.Resources.Strings.ja-JP.yaml");
+            if (japaneseResource != null && japaneseResource.Count > 0)
+            {
+                _allStrings["ja-JP"] = japaneseResource;
+                Instance.Log(LogLevel.Debug, $"Loaded {japaneseResource.Count} Japanese strings from embedded resource", true);
             }
         }
 
@@ -213,16 +276,39 @@ namespace IEVRModManager.Helpers
         {
             try
             {
-                var yamlContent = File.ReadAllText(filePath);
+                // Try UTF-8 first, then fallback to default encoding
+                string yamlContent;
+                try
+                {
+                    yamlContent = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+                }
+                catch
+                {
+                    yamlContent = File.ReadAllText(filePath);
+                }
+                
                 var deserializer = new DeserializerBuilder()
                     .Build();
                 
                 var yamlDict = deserializer.Deserialize<Dictionary<string, string>>(yamlContent);
-                return yamlDict ?? new Dictionary<string, string>();
+                
+                if (yamlDict == null || yamlDict.Count == 0)
+                {
+                    Instance.Log(LogLevel.Warning, $"YAML file {filePath} loaded but contains no entries", true);
+                    return new Dictionary<string, string>();
+                }
+                
+                Instance.Log(LogLevel.Debug, $"Successfully loaded {yamlDict.Count} entries from {filePath}", true);
+                return yamlDict;
             }
             catch (Exception ex)
             {
                 Instance.Log(LogLevel.Warning, $"Error loading YAML file {filePath}", true, ex);
+                Instance.Log(LogLevel.Debug, $"Exception details: {ex.GetType().Name} - {ex.Message}", true);
+                if (ex.InnerException != null)
+                {
+                    Instance.Log(LogLevel.Debug, $"Inner exception: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}", true);
+                }
                 return new Dictionary<string, string>();
             }
         }
@@ -233,20 +319,59 @@ namespace IEVRModManager.Helpers
         /// <param name="languageCode">The language code (e.g., "en-US", "es-ES") or "System" to use system default.</param>
         public static void SetLanguage(string languageCode)
         {
+            Instance.Log(LogLevel.Info, $"SetLanguage called with languageCode: '{languageCode}'", true);
             try
             {
                 var (culture, langKey) = DetermineCulture(languageCode);
-                SetCulture(culture);
+                Instance.Log(LogLevel.Info, $"DetermineCulture returned langKey: '{langKey}', culture: '{culture.Name}'", true);
+                
+                // Try to set culture, but don't fail if it's not available on the system
+                try
+                {
+                    SetCulture(culture);
+                    Instance.Log(LogLevel.Debug, $"Successfully set culture to '{culture.Name}'", true);
+                }
+                catch (Exception cultureEx)
+                {
+                    Instance.Log(LogLevel.Debug, $"Could not set culture '{languageCode}', using language code directly", true, cultureEx);
+                    // Continue with the language code even if culture setting fails
+                }
 
                 lock (_lockObject)
                 {
                     EnsureStringsLoaded();
+                    
+                    // Log available language keys before getting strings
+                    if (_allStrings != null)
+                    {
+                        Instance.Log(LogLevel.Debug, $"Available language keys in _allStrings: {string.Join(", ", _allStrings.Keys)}", true);
+                    }
+                    
                     _currentStrings = GetStringsForLanguage(langKey);
+                    
+                    // Verify that we got the correct language strings
+                    if (_currentStrings != null && _currentStrings.Count > 0)
+                    {
+                        Instance.Log(LogLevel.Info, $"Successfully loaded {_currentStrings.Count} strings for language '{langKey}'", true);
+                        // Test getting a specific string
+                        var testString = _currentStrings.ContainsKey("AppTitle") ? _currentStrings["AppTitle"] : "NOT FOUND";
+                        Instance.Log(LogLevel.Debug, $"Test: AppTitle = '{testString}'", true);
+                    }
+                    else
+                    {
+                        Instance.Log(LogLevel.Warning, $"No strings loaded for language '{langKey}', falling back to en-US", true);
+                        _currentStrings = GetStringsForLanguage("en-US");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Instance.Log(LogLevel.Warning, "Error in SetLanguage", true, ex);
+                Instance.Log(LogLevel.Debug, $"Exception type: {ex.GetType().Name}, Message: {ex.Message}", true);
+                if (ex.InnerException != null)
+                {
+                    Instance.Log(LogLevel.Debug, $"Inner exception: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}", true);
+                }
                 _currentCulture = CultureInfo.CurrentUICulture;
                 lock (_lockObject)
                 {
@@ -265,7 +390,26 @@ namespace IEVRModManager.Helpers
             }
             else
             {
-                var culture = new CultureInfo(languageCode);
+                // Try to create the culture, but fall back to a neutral culture if specific one fails
+                CultureInfo culture;
+                try
+                {
+                    culture = new CultureInfo(languageCode);
+                }
+                catch
+                {
+                    // If specific culture fails (e.g., "de-DE" not installed), try neutral culture (e.g., "de")
+                    try
+                    {
+                        var neutralCode = languageCode.Split('-')[0];
+                        culture = new CultureInfo(neutralCode);
+                    }
+                    catch
+                    {
+                        // If even neutral fails, use InvariantCulture but keep the original language code for string lookup
+                        culture = CultureInfo.InvariantCulture;
+                    }
+                }
                 return (culture, languageCode);
             }
         }
@@ -291,14 +435,19 @@ namespace IEVRModManager.Helpers
         {
             if (_allStrings == null)
             {
+                Instance.Log(LogLevel.Warning, "GetStringsForLanguage: _allStrings is null", true);
                 return new Dictionary<string, string>();
             }
 
+            Instance.Log(LogLevel.Debug, $"GetStringsForLanguage: Looking for language key '{langKey}'. Available keys: {string.Join(", ", _allStrings.Keys)}", true);
+
             if (_allStrings.TryGetValue(langKey, out var strings))
             {
+                Instance.Log(LogLevel.Debug, $"GetStringsForLanguage: Found {strings.Count} strings for '{langKey}'", true);
                 return strings;
             }
 
+            Instance.Log(LogLevel.Warning, $"GetStringsForLanguage: Language key '{langKey}' not found, falling back to en-US", true);
             return _allStrings.TryGetValue("en-US", out var defaultStrings) 
                 ? defaultStrings 
                 : new Dictionary<string, string>();

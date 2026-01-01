@@ -82,10 +82,17 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <StackPanel x:Name="ContentPanel" Grid.RowSpan="4">
-                                <Image Source="{Binding ThumbnailUrl}"
-                                       Height="140"
-                                       Stretch="UniformToFill"
-                                       Margin="0,0,0,6"/>
+                                <Border Height="140" 
+                                        Background="{StaticResource AccentBrush}" 
+                                        Opacity="0.1"
+                                        CornerRadius="4"
+                                        Margin="0,0,0,6">
+                                    <Image x:Name="ModImage"
+                                           Source="{Binding ThumbnailUrl}"
+                                           Height="140"
+                                           Stretch="UniformToFill"
+                                           ImageFailed="ModImage_ImageFailed"/>
+                                </Border>
                                 <TextBlock Text="{Binding Name}"
                                            TextWrapping="NoWrap"
                                            TextTrimming="CharacterEllipsis"
@@ -93,13 +100,24 @@
                                            FontWeight="Bold"
                                            Foreground="{StaticResource TextBrightBrush}"
                                            Margin="0,0,0,4"/>
-                                <Button Content="Open"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Tag="{Binding}"
-                                        Click="OpenPage_Click"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Bottom"
-                                        Margin="0,8,0,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                                    <Button Content="Open"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Tag="{Binding}"
+                                            Click="OpenPage_Click"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,6,0"
+                                            MinWidth="100"/>
+                                    <Button Content="Download"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Tag="{Binding}"
+                                            Click="DownloadRow_Click"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="6,0,0,0"
+                                            MinWidth="100"/>
+                                </StackPanel>
                             </StackPanel>
                             <StackPanel x:Name="SkeletonPanel" Visibility="Collapsed" Grid.RowSpan="4">
                                 <Rectangle Height="140"

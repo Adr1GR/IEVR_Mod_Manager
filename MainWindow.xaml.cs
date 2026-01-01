@@ -32,7 +32,9 @@ namespace IEVRModManager
         private ObservableCollection<ModEntryViewModel> _modEntries;
         private readonly ObservableCollection<CpkOption> _availableCpkFiles = new();
         private static readonly HttpClient _httpClient = new();
-        private AppConfig _config = null!;
+        private static bool _httpClientDisposed = false;
+        private AppConfig _config = null!; // Initialized in LoadConfig() called from constructor
+        private readonly object _configLock = new object();
         private bool _isApplying;
         private bool _isDownloadingCpkLists;
         private DispatcherTimer? _playResetTimer;
@@ -63,7 +65,8 @@ namespace IEVRModManager
                 Dispatcher.Invoke(() =>
                 {
                     // Filter technical logs based on configuration
-                    if (isTechnical && !_config.ShowTechnicalLogs)
+                    var config = GetConfig();
+                    if (isTechnical && !config.ShowTechnicalLogs)
                     {
                         return; // Don't show technical logs if option is disabled
                     }
@@ -113,15 +116,16 @@ namespace IEVRModManager
                 UpdateLocalizedTexts();
                 RefreshProfileSelector();
                 // Update selector to show the loaded profile
-                if (!string.IsNullOrWhiteSpace(_config.LastAppliedProfile))
+                var config = GetConfig();
+                if (!string.IsNullOrWhiteSpace(config.LastAppliedProfile))
                 {
                     _isRefreshingProfileSelector = true;
                     try
                     {
-                        if (ProfileSelector.Items.Contains(_config.LastAppliedProfile))
+                        if (ProfileSelector.Items.Contains(config.LastAppliedProfile))
                         {
-                            ProfileSelector.SelectedItem = _config.LastAppliedProfile;
-                            _previousProfileSelection = _config.LastAppliedProfile;
+                            ProfileSelector.SelectedItem = config.LastAppliedProfile;
+                            _previousProfileSelection = config.LastAppliedProfile;
                         }
                     }
                     finally
@@ -138,18 +142,55 @@ namespace IEVRModManager
             _ = PrefetchModsIfNeededAsync();
         }
 
+        /// <summary>
+        /// Gets a thread-safe copy of the current configuration.
+        /// </summary>
+        private AppConfig GetConfig()
+        {
+            lock (_configLock)
+            {
+                return _config ?? Models.AppConfig.Default();
+            }
+        }
+
+        /// <summary>
+        /// Sets the configuration in a thread-safe manner.
+        /// </summary>
+        private void SetConfig(AppConfig config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+            lock (_configLock)
+            {
+                _config = config;
+            }
+        }
+
         private void LoadConfig()
         {
-            _config = _configManager.Load();
-            var lastCheck = _config.LastAppUpdateCheckUtc;
-            if (lastCheck != DateTime.MinValue)
+            try
             {
-                var timeSinceLastCheck = DateTime.UtcNow - lastCheck;
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] Loaded config - LastAppUpdateCheckUtc: {lastCheck:yyyy-MM-dd HH:mm:ss} UTC ({timeSinceLastCheck.TotalMinutes:F1} minutes ago)");
+                var loadedConfig = _configManager.Load();
+                SetConfig(loadedConfig);
+                var config = GetConfig();
+                var lastCheck = config.LastAppUpdateCheckUtc;
+                if (lastCheck != DateTime.MinValue)
+                {
+                    var timeSinceLastCheck = DateTime.UtcNow - lastCheck;
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow] Loaded config - LastAppUpdateCheckUtc: {lastCheck:yyyy-MM-dd HH:mm:ss} UTC ({timeSinceLastCheck.TotalMinutes:F1} minutes ago)");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainWindow] Loaded config - LastAppUpdateCheckUtc: never");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("[MainWindow] Loaded config - LastAppUpdateCheckUtc: never");
+                // If config loading fails, use default config
+                Helpers.Logger.Instance.Log(Helpers.LogLevel.Error, $"Failed to load config, using defaults: {ex.Message}", true, ex);
+                SetConfig(Models.AppConfig.Default());
             }
         }
 
@@ -614,15 +655,17 @@ namespace IEVRModManager
         {
             try
             {
+                var config = GetConfig();
                 // Update mods list from current entries
-                _config.Mods = _modEntries.Select(me => new ModData
+                config.Mods = _modEntries.Select(me => new ModData
                 {
                     Name = me.Name,
                     Enabled = me.Enabled,
                     ModLink = me.ModLink
                 }).ToList();
 
-                var success = _configManager.Save(_config);
+                SetConfig(config);
+                var success = _configManager.Save(config);
 
                 if (!success)
                 {
@@ -1471,7 +1514,8 @@ namespace IEVRModManager
                 }
             }
 
-            var exePath = Path.Combine(_config.GamePath, "nie.exe");
+            var config = GetConfig();
+            var exePath = Path.Combine(config.GamePath, "nie.exe");
             if (!File.Exists(exePath))
             {
                 ShowError("NieExeNotFound");
@@ -1483,12 +1527,21 @@ namespace IEVRModManager
                 SetPlayLoadingState(true);
                 Log("Launching game...", "info", true);
 
-                Process.Start(new ProcessStartInfo
+                var processStartInfo = new ProcessStartInfo
                 {
                     FileName = exePath,
-                    WorkingDirectory = _config.GamePath,
+                    WorkingDirectory = config.GamePath,
                     UseShellExecute = true
-                });
+                };
+                
+                var gameProcess = Process.Start(processStartInfo);
+                if (gameProcess != null)
+                {
+                    // Process started successfully - it will continue running independently
+                    // We don't need to dispose it as it should continue after the app closes
+                    // However, we can optionally enable process exit handling if needed
+                    gameProcess.EnableRaisingEvents = false; // Don't track process exit
+                }
                 
                 // Minimize window after launching game (only if no alerts were shown)
                 WindowState = WindowState.Minimized;
@@ -2077,22 +2130,24 @@ namespace IEVRModManager
             
             window.ShowDialog();
             
-            // Ensure final values are saved
-            _config.GamePath = configCopy.GamePath;
-            _config.CfgBinPath = configCopy.CfgBinPath;
-            _config.SelectedCpkName = configCopy.SelectedCpkName;
-            _config.ViolaCliPath = configCopy.ViolaCliPath;
-            _config.Theme = configCopy.Theme;
-            _config.ShowTechnicalLogs = configCopy.ShowTechnicalLogs;
+            // Ensure final values are saved - update config thread-safely
+            var config = GetConfig();
+            config.GamePath = configCopy.GamePath;
+            config.CfgBinPath = configCopy.CfgBinPath;
+            config.SelectedCpkName = configCopy.SelectedCpkName;
+            config.ViolaCliPath = configCopy.ViolaCliPath;
+            config.Theme = configCopy.Theme;
+            config.ShowTechnicalLogs = configCopy.ShowTechnicalLogs;
             
             // Check if language changed
-            bool languageChanged = _config.Language != configCopy.Language;
-            _config.Language = configCopy.Language;
+            bool languageChanged = config.Language != configCopy.Language;
+            config.Language = configCopy.Language;
+            SetConfig(config);
             
             // Apply language change if it changed
             if (languageChanged)
             {
-                LocalizationHelper.SetLanguage(_config.Language);
+                LocalizationHelper.SetLanguage(config.Language);
                 UpdateLocalizedTexts();
             }
             
@@ -2120,6 +2175,18 @@ namespace IEVRModManager
 
             SaveConfig();
             Close();
+        }
+
+        /// <summary>
+        /// Disposes the static HttpClient instance. Should be called when the application is shutting down.
+        /// </summary>
+        public static void DisposeHttpClient()
+        {
+            if (!_httpClientDisposed)
+            {
+                _httpClient?.Dispose();
+                _httpClientDisposed = true;
+            }
         }
 
         private void Log(string message, string level = "info", bool isTechnical = false)
@@ -2622,7 +2689,7 @@ namespace IEVRModManager
                 Log($"[AppUpdate] Saved check time: {checkTime:yyyy-MM-dd HH:mm:ss} UTC", "info", true);
                 
                 // Reload config to keep in-memory config in sync
-                _config = _configManager.Load();
+                SetConfig(_configManager.Load());
 
                 if (releaseInfo == null)
                 {

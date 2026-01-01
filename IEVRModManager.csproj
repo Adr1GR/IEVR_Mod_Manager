@@ -8,10 +8,10 @@
     <ApplicationIcon>logo.ico</ApplicationIcon>
     <AssemblyName>IEVRModManager</AssemblyName>
     <RootNamespace>IEVRModManager</RootNamespace>
-    <Version>1.7.2</Version>
-    <AssemblyVersion>1.7.2.0</AssemblyVersion>
-    <FileVersion>1.7.2.0</FileVersion>
-    <InformationalVersion>1.7.2</InformationalVersion>
+    <Version>1.8.0</Version>
+    <AssemblyVersion>1.8.0.0</AssemblyVersion>
+    <FileVersion>1.8.0.0</FileVersion>
+    <InformationalVersion>1.8.0</InformationalVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
@@ -32,6 +32,8 @@
     <EmbeddedResource Include="Resources\Strings.yaml" />
     <EmbeddedResource Include="Resources\Strings.es-ES.yaml" />
     <EmbeddedResource Include="Resources\Strings.fr-FR.yaml" />
+    <EmbeddedResource Include="Resources\Strings.de-DE.yaml" />
+    <EmbeddedResource Include="Resources\Strings.ja-JP.yaml" />
     <!-- Also copy to output for development -->
     <None Update="Resources\Strings.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -40,6 +42,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Strings.fr-FR.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Strings.de-DE.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Strings.ja-JP.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

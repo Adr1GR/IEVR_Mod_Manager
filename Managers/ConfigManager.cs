@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using IEVRModManager.Models;
 using IEVRModManager.Helpers;
 using IEVRModManager.Exceptions;
@@ -373,6 +374,16 @@ namespace IEVRModManager.Managers
         /// <param name="checkTime">The UTC timestamp of when the update check was performed.</param>
         public void UpdateLastAppUpdateCheckUtc(DateTime checkTime)
         {
+            // Use async version but run synchronously for backward compatibility
+            UpdateLastAppUpdateCheckUtcAsync(checkTime).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Updates the last application update check timestamp in the configuration (async version).
+        /// </summary>
+        /// <param name="checkTime">The UTC timestamp of when the update check was performed.</param>
+        public async Task UpdateLastAppUpdateCheckUtcAsync(DateTime checkTime)
+        {
             try
             {
                 var config = Load();
@@ -380,21 +391,49 @@ namespace IEVRModManager.Managers
                 config.LastAppUpdateCheckUtc = checkTime;
                 SaveConfigToFile(config);
                 
-                System.Threading.Thread.Sleep(50);
+                // Verify the file was written correctly by reading it back
+                // Use retry logic instead of Thread.Sleep to handle potential file system delays
+                const int maxRetries = 5;
+                const int retryDelayMs = 10;
+                bool verified = false;
                 
-                if (File.Exists(_configPath))
+                for (int i = 0; i < maxRetries && !verified; i++)
                 {
-                    var json = File.ReadAllText(_configPath);
-                    using var jsonDoc = JsonDocument.Parse(json);
-                    if (jsonDoc.RootElement.TryGetProperty("LastAppUpdateCheckUtc", out var prop))
+                    if (i > 0)
                     {
-                        var savedValue = prop.GetDateTime();
-                        Instance.Debug($"Updated LastAppUpdateCheckUtc from {oldValue:yyyy-MM-dd HH:mm:ss} UTC to {checkTime:yyyy-MM-dd HH:mm:ss} UTC. File contains: {savedValue:yyyy-MM-dd HH:mm:ss} UTC", true);
+                        await Task.Delay(retryDelayMs);
                     }
-                    else
+                    
+                    if (File.Exists(_configPath))
                     {
-                        Instance.Warning("LastAppUpdateCheckUtc property not found in saved config file!", true);
+                        try
+                        {
+                            var json = File.ReadAllText(_configPath);
+                            using var jsonDoc = JsonDocument.Parse(json);
+                            if (jsonDoc.RootElement.TryGetProperty("LastAppUpdateCheckUtc", out var prop))
+                            {
+                                var savedValue = prop.GetDateTime();
+                                if (savedValue == checkTime)
+                                {
+                                    Instance.Debug($"Updated LastAppUpdateCheckUtc from {oldValue:yyyy-MM-dd HH:mm:ss} UTC to {checkTime:yyyy-MM-dd HH:mm:ss} UTC. File contains: {savedValue:yyyy-MM-dd HH:mm:ss} UTC", true);
+                                    verified = true;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // If we're on the last retry, log the warning
+                            if (i == maxRetries - 1)
+                            {
+                                Instance.Warning($"Could not verify LastAppUpdateCheckUtc after {maxRetries} attempts: {ex.Message}", true);
+                            }
+                        }
                     }
+                }
+                
+                if (!verified)
+                {
+                    Instance.Warning("LastAppUpdateCheckUtc property not found or incorrect in saved config file after verification attempts!", true);
                 }
             }
             catch (Exception ex)

@@ -109,7 +109,9 @@ namespace IEVRModManager.Windows
                     string languageName = language == "System" ? LocalizationHelper.GetString("System") + " (follows OS language)" : 
                                          language == "en-US" ? LocalizationHelper.GetString("English") : 
                                          language == "fr-FR" ? LocalizationHelper.GetString("French") :
-                                         language == "es-ES" ? LocalizationHelper.GetString("Espanol") : language;
+                                         language == "es-ES" ? LocalizationHelper.GetString("Espanol") :
+                                         language == "de-DE" ? LocalizationHelper.GetString("German") :
+                                         language == "ja-JP" ? LocalizationHelper.GetString("Japanese") : language;
                     var themeWindow = new ThemeChangeWindow(this, string.Format(LocalizationHelper.GetString("LanguageChangedMessage"), languageName));
                     var result = themeWindow.ShowDialog();
                     
@@ -153,6 +155,10 @@ namespace IEVRModManager.Windows
                                        theme == "Dark" ? LocalizationHelper.GetString("Dark") :
                                        theme == "Christmas" ? LocalizationHelper.GetString("Christmas") :
                                        theme == "Red" ? LocalizationHelper.GetString("Red") :
+                                       theme == "Blue" ? LocalizationHelper.GetString("Blue") :
+                                       theme == "Purple" ? LocalizationHelper.GetString("Purple") :
+                                       theme == "Pastel" ? LocalizationHelper.GetString("Pastel") :
+                                       theme == "Neon" ? LocalizationHelper.GetString("Neon") :
                                        theme;
                     var themeWindow = new ThemeChangeWindow(this, themeName);
                     var result = themeWindow.ShowDialog();
@@ -246,6 +252,10 @@ namespace IEVRModManager.Windows
                         item.Content = LocalizationHelper.GetString("French");
                     else if (item.Tag?.ToString() == "es-ES")
                         item.Content = LocalizationHelper.GetString("Espanol");
+                    else if (item.Tag?.ToString() == "de-DE")
+                        item.Content = LocalizationHelper.GetString("German");
+                    else if (item.Tag?.ToString() == "ja-JP")
+                        item.Content = LocalizationHelper.GetString("Japanese");
                 }
             }
             
@@ -263,6 +273,14 @@ namespace IEVRModManager.Windows
                         item.Content = LocalizationHelper.GetString("Christmas");
                     else if (item.Tag?.ToString() == "Red")
                         item.Content = LocalizationHelper.GetString("Red");
+                    else if (item.Tag?.ToString() == "Blue")
+                        item.Content = LocalizationHelper.GetString("Blue");
+                    else if (item.Tag?.ToString() == "Purple")
+                        item.Content = LocalizationHelper.GetString("Purple");
+                    else if (item.Tag?.ToString() == "Pastel")
+                        item.Content = LocalizationHelper.GetString("Pastel");
+                    else if (item.Tag?.ToString() == "Neon")
+                        item.Content = LocalizationHelper.GetString("Neon");
                 }
             }
         }

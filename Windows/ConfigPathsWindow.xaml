@@ -150,6 +150,8 @@
                 <ComboBoxItem Content="English" Tag="en-US"/>
                 <ComboBoxItem Content="Español" Tag="es-ES"/>
                 <ComboBoxItem Content="French" Tag="fr-FR"/>
+                <ComboBoxItem Content="German" Tag="de-DE"/>
+                <ComboBoxItem Content="Japanese" Tag="ja-JP"/>
             </ComboBox>
         </Grid>
 
@@ -219,6 +221,10 @@
                 <ComboBoxItem Content="Dark" Tag="Dark"/>
                 <ComboBoxItem Content="Christmas" Tag="Christmas"/>
                 <ComboBoxItem Content="Red" Tag="Red"/>
+                <ComboBoxItem Content="Blue" Tag="Blue"/>
+                <ComboBoxItem Content="Purple" Tag="Purple"/>
+                <ComboBoxItem Content="Pastel" Tag="Pastel"/>
+                <ComboBoxItem Content="Neon" Tag="Neon"/>
             </ComboBox>
         </Grid>
 

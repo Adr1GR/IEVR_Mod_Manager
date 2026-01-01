@@ -302,6 +302,45 @@ dotnet run
 .\bin\Release\net8.0-windows\IEVRModManager.exe
 ```
 
+### Building for Linux (AppImage)
+
+**⚠️ Important:** This project currently uses **WPF (Windows Presentation Foundation)**, which is Windows-only. To build for Linux, you need to migrate to a cross-platform framework like **Avalonia UI** or **.NET MAUI**.
+
+**Current Status:**
+- ❌ WPF does not work on Linux
+- ✅ Build scripts are prepared for when migration is complete
+- 📖 See `MIGRATION_TO_LINUX.md` for detailed migration guide
+
+**After Migration to Avalonia UI:**
+
+1. **Prepare the build environment (Linux):**
+   ```bash
+   # Install .NET 8 SDK
+   # Install appimagetool (will be downloaded automatically by build script)
+   ```
+
+2. **Run the Linux build script:**
+   ```bash
+   ./build-linux.sh 1.8.0
+   ```
+
+3. **The script will:**
+   - Update version numbers
+   - Compile for Linux-x64
+   - Create AppImage structure
+   - Generate `IEVRModManager-1.8.0-x86_64.AppImage`
+
+4. **Test the AppImage:**
+   ```bash
+   chmod +x IEVRModManager-1.8.0-x86_64.AppImage
+   ./IEVRModManager-1.8.0-x86_64.AppImage
+   ```
+
+**For more information:**
+- See `MIGRATION_TO_LINUX.md` for migration guide
+- See `build-linux.sh` for the build script
+- See `prepare-linux-build.ps1` to identify Windows-specific code
+
 ### Technologies Used
 
 - **.NET 8.0** - Development framework

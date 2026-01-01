@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using IEVRModManager.Helpers;
 
 namespace IEVRModManager.Windows
@@ -33,12 +34,26 @@ namespace IEVRModManager.Windows
         private static readonly Dictionary<int, DateTime> _cacheTimestampByPage = new();
         private static readonly Dictionary<int, Task<List<GameBananaMod>>> _inflightFetchByPage = new();
 
+        private static bool _disposed = false;
+
         static GameBananaBrowserWindow()
         {
             SharedHttpClient = new HttpClient();
             SharedHttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("IEVRModManager/1.0");
             SharedHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             SharedHttpClient.Timeout = TimeSpan.FromSeconds(20);
+        }
+
+        /// <summary>
+        /// Disposes the static HttpClient instance. Should be called when the application is shutting down.
+        /// </summary>
+        public static void DisposeHttpClient()
+        {
+            if (!_disposed)
+            {
+                SharedHttpClient?.Dispose();
+                _disposed = true;
+            }
         }
 
         /// <summary>
@@ -133,6 +148,11 @@ namespace IEVRModManager.Windows
 
         private static async Task<List<GameBananaMod>> GetOrFetchModsAsync(MainWindow? owner, int page, bool forceRefresh)
         {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GameBananaBrowserWindow), "HttpClient has been disposed.");
+            }
+
             Task<List<GameBananaMod>>? fetchTask;
             lock (CacheLock)
             {
@@ -187,6 +207,7 @@ namespace IEVRModManager.Windows
             ShowSkeletonPlaceholders();
             PrevPageButton.IsEnabled = false;
             NextPageButton.IsEnabled = false;
+            RefreshButton.IsEnabled = false;
             PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
             var loadFailed = false;
 
@@ -194,6 +215,34 @@ namespace IEVRModManager.Windows
             {
                 var mods = await GetOrFetchModsAsync(_mainWindow, _currentPage, forceRefresh);
                 _pageMods = mods;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                loadFailed = true;
+                StatusText.Text = LocalizationHelper.GetString("FailedToLoadMods");
+                FooterText.Text = LocalizationHelper.GetString("CheckConnectionAndTryAgain");
+                _mods.Clear();
+                _pageMods = new List<GameBananaMod>();
+                _mainWindow?.LogMessage($"Network error fetching mods from GameBanana: {httpEx.Message}", "error");
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    $"{LocalizationHelper.GetString("CouldNotFetchGameBananaMods")}\n{httpEx.Message}", 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
+            }
+            catch (TaskCanceledException)
+            {
+                loadFailed = true;
+                StatusText.Text = LocalizationHelper.GetString("FailedToLoadMods");
+                FooterText.Text = LocalizationHelper.GetString("CheckConnectionAndTryAgain");
+                _mods.Clear();
+                _pageMods = new List<GameBananaMod>();
+                _mainWindow?.LogMessage("Request to GameBanana timed out.", "error");
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    $"{LocalizationHelper.GetString("CouldNotFetchGameBananaMods")}\nRequest timed out.", 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -212,6 +261,7 @@ namespace IEVRModManager.Windows
             finally
             {
                 _isLoading = false;
+                RefreshButton.IsEnabled = true;
             }
 
             if (!loadFailed)
@@ -260,12 +310,24 @@ namespace IEVRModManager.Windows
 
         private void UpdatePageControls(int filteredCount, int totalCount)
         {
-            PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
-            StatusText.Text = string.IsNullOrWhiteSpace(_searchQuery)
-                ? string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, totalCount)
-                : string.Format(LocalizationHelper.GetString("PageModsCountFiltered"), _currentPage, filteredCount, totalCount);
-            PrevPageButton.IsEnabled = !_isLoading && _currentPage > 1;
-            NextPageButton.IsEnabled = !_isLoading && totalCount >= PageSize;
+            if (PageIndicator != null)
+            {
+                PageIndicator.Text = string.Format(LocalizationHelper.GetString("PageLabel"), _currentPage);
+            }
+            if (StatusText != null)
+            {
+                StatusText.Text = string.IsNullOrWhiteSpace(_searchQuery)
+                    ? string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, totalCount)
+                    : string.Format(LocalizationHelper.GetString("PageModsCountFiltered"), _currentPage, filteredCount, totalCount);
+            }
+            if (PrevPageButton != null)
+            {
+                PrevPageButton.IsEnabled = !_isLoading && _currentPage > 1;
+            }
+            if (NextPageButton != null)
+            {
+                NextPageButton.IsEnabled = !_isLoading && totalCount >= PageSize;
+            }
         }
 
         private async void PrevPage_Click(object sender, RoutedEventArgs e)
@@ -556,16 +618,28 @@ namespace IEVRModManager.Windows
 
         private async Task DownloadModAsync(GameBananaMod mod)
         {
+            if (mod.IsPlaceholder)
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(mod.DownloadUrl))
             {
                 // Try to resolve download URL just-in-time
-                var detailed = await FetchModDetailsFromCoreAsync(mod.Id);
-                if (detailed != null && !string.IsNullOrWhiteSpace(detailed.DownloadUrl))
+                try
                 {
-                    mod.DownloadUrl = detailed.DownloadUrl;
-                    mod.PageUrl = string.IsNullOrWhiteSpace(mod.PageUrl) ? detailed.PageUrl : mod.PageUrl;
-                    mod.Name = string.IsNullOrWhiteSpace(mod.Name) ? detailed.Name : mod.Name;
-                    mod.Downloads = detailed.Downloads;
+                    var detailed = await FetchModDetailsFromCoreAsync(mod.Id);
+                    if (detailed != null && !string.IsNullOrWhiteSpace(detailed.DownloadUrl))
+                    {
+                        mod.DownloadUrl = detailed.DownloadUrl;
+                        mod.PageUrl = string.IsNullOrWhiteSpace(mod.PageUrl) ? detailed.PageUrl : mod.PageUrl;
+                        mod.Name = string.IsNullOrWhiteSpace(mod.Name) ? detailed.Name : mod.Name;
+                        mod.Downloads = detailed.Downloads;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _mainWindow?.LogMessage($"Could not fetch download URL for mod {mod.Id}: {ex.Message}", "error");
                 }
             }
 
@@ -582,17 +656,33 @@ namespace IEVRModManager.Windows
             try
             {
                 var modsRoot = Config.DefaultModsDir;
+                if (string.IsNullOrWhiteSpace(modsRoot))
+                {
+                    throw new InvalidOperationException("Mods directory is not configured.");
+                }
+
                 Directory.CreateDirectory(modsRoot);
 
                 var targetDir = GetUniqueDirectory(modsRoot, SanitizeName(mod.Name));
                 var tmpDir = Config.DefaultTmpDir;
+                if (string.IsNullOrWhiteSpace(tmpDir))
+                {
+                    throw new InvalidOperationException("Temporary directory is not configured.");
+                }
+
                 Directory.CreateDirectory(tmpDir);
                 var tmpFile = Path.Combine(tmpDir, $"gb_{mod.Id}_{Guid.NewGuid():N}");
 
-                var data = await SharedHttpClient.GetByteArrayAsync(mod.DownloadUrl);
-                await File.WriteAllBytesAsync(tmpFile, data);
+                StatusText.Text = $"Downloading {mod.Name}...";
+                FooterText.Text = "Please wait...";
 
-                var extension = Path.GetExtension(mod.DownloadUrl);
+                using var response = await SharedHttpClient.GetAsync(mod.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+
+                using var fileStream = new FileStream(tmpFile, FileMode.Create, FileAccess.Write, FileShare.None);
+                await response.Content.CopyToAsync(fileStream);
+
+                var extension = Path.GetExtension(mod.DownloadUrl) ?? ".zip";
                 if (string.Equals(extension, ".zip", StringComparison.OrdinalIgnoreCase))
                 {
                     ZipFile.ExtractToDirectory(tmpFile, targetDir, true);
@@ -612,11 +702,34 @@ namespace IEVRModManager.Windows
                 }
 
                 _mainWindow?.LogMessage($"Downloaded {mod.Name} to {targetDir}", "success");
+                StatusText.Text = string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, _pageMods.Count);
+                FooterText.Text = LocalizationHelper.GetString("DoubleClickOpensModPage");
+                
                 var successWindow = new MessageWindow(this, 
                     LocalizationHelper.GetString("SuccessTitle"), 
                     string.Format(LocalizationHelper.GetString("DownloadComplete"), mod.Name), 
                     MessageType.Success);
                 successWindow.ShowDialog();
+
+                // Note: MainWindow will refresh mods list on next scan
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _mainWindow?.LogMessage($"Network error downloading {mod.Name}: {httpEx.Message}", "error");
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("CouldNotDownloadMod"), $"Network error: {httpEx.Message}"), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
+            }
+            catch (TaskCanceledException)
+            {
+                _mainWindow?.LogMessage($"Download timeout for {mod.Name}", "error");
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("CouldNotDownloadMod"), "Download timed out."), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -626,6 +739,14 @@ namespace IEVRModManager.Windows
                     string.Format(LocalizationHelper.GetString("CouldNotDownloadMod"), ex.Message), 
                     MessageType.Error);
                 errorWindow.ShowDialog();
+            }
+            finally
+            {
+                if (!_isLoading)
+                {
+                    StatusText.Text = string.Format(LocalizationHelper.GetString("PageModsCount"), _currentPage, _pageMods.Count);
+                    FooterText.Text = LocalizationHelper.GetString("DoubleClickOpensModPage");
+                }
             }
         }
 
@@ -732,6 +853,20 @@ namespace IEVRModManager.Windows
             catch (Exception ex)
             {
                 _mainWindow?.LogMessage($"Could not open link: {ex.Message}", "error");
+                var errorWindow = new MessageWindow(this, 
+                    LocalizationHelper.GetString("ErrorTitle"), 
+                    string.Format(LocalizationHelper.GetString("CouldNotOpenLink"), ex.Message), 
+                    MessageType.Error);
+                errorWindow.ShowDialog();
+            }
+        }
+
+        private void ModImage_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            // Silently handle image loading failures - show placeholder instead
+            if (sender is Image image)
+            {
+                image.Source = null;
             }
         }
     }

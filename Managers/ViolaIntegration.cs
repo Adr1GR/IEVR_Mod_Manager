@@ -11,12 +11,13 @@ namespace IEVRModManager.Managers
     /// <summary>
     /// Provides integration with the Viola CLI tool for merging mods.
     /// </summary>
-    public class ViolaIntegration
+    public class ViolaIntegration : IDisposable
     {
         private readonly Action<string> _logCallback;
         private readonly Action<int, string>? _progressCallback;
         private Process? _currentProcess;
         private bool _isRunning;
+        private bool _disposed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ViolaIntegration"/> class.
@@ -152,7 +153,48 @@ namespace IEVRModManager.Managers
 
         private async Task<int> WaitForProcessCompletionAsync()
         {
+            // Start a periodic progress update task that gradually increases from 10% to 45%
+            // This provides visual feedback that the process is still running
+            // The progress oscillates between 10% and 45% to show the process is active
+            using var cts = new CancellationTokenSource();
+            var progressTask = Task.Run(async () =>
+            {
+                const int startProgress = 10;
+                const int endProgress = 45;
+                const int updateIntervalMs = 150; // Update every 150ms for smoother progress
+                const int cycleDurationMs = 30000; // Complete cycle over 30 seconds
+                const int steps = cycleDurationMs / updateIntervalMs;
+                
+                try
+                {
+                    int cycle = 0;
+                    while (!cts.Token.IsCancellationRequested)
+                    {
+                        if (_currentProcess == null || _currentProcess.HasExited)
+                            break;
+                        
+                        // Calculate progress: oscillate between startProgress and endProgress
+                        // Each cycle takes 30 seconds, then repeats
+                        int stepInCycle = cycle % steps;
+                        var progress = startProgress + (int)((endProgress - startProgress) * (stepInCycle / (double)steps));
+                        _progressCallback?.Invoke(progress, "MergingMods");
+                        
+                        await Task.Delay(updateIntervalMs, cts.Token);
+                        cycle++;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when process completes
+                }
+            }, cts.Token);
+
+            // Wait for process to complete
             await _currentProcess!.WaitForExitAsync();
+            
+            // Cancel progress updates
+            cts.Cancel();
+            
             var exitCode = _currentProcess.ExitCode;
             _logCallback($"violacli finished with code {exitCode}");
             return exitCode;
@@ -160,7 +202,7 @@ namespace IEVRModManager.Managers
 
         private bool HandleProcessCompletion(int exitCode)
         {
-            _currentProcess = null;
+            DisposeProcess();
             _isRunning = false;
 
             if (exitCode == 0)
@@ -179,6 +221,7 @@ namespace IEVRModManager.Managers
         {
             _logCallback(logMessage);
             _progressCallback?.Invoke(0, progressMessage);
+            DisposeProcess();
             _isRunning = false;
         }
 
@@ -263,9 +306,60 @@ namespace IEVRModManager.Managers
                 {
                     // Ignore errors when stopping process
                 }
-                _currentProcess = null;
             }
+            DisposeProcess();
             _isRunning = false;
+        }
+
+        /// <summary>
+        /// Disposes the current process if it exists.
+        /// </summary>
+        private void DisposeProcess()
+        {
+            if (_currentProcess != null)
+            {
+                try
+                {
+                    if (!_currentProcess.HasExited)
+                    {
+                        _currentProcess.Kill();
+                    }
+                }
+                catch
+                {
+                    // Ignore errors when disposing process
+                }
+                finally
+                {
+                    _currentProcess.Dispose();
+                    _currentProcess = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Releases all resources used by the ViolaIntegration instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the ViolaIntegration instance and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">True to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    DisposeProcess();
+                }
+                _disposed = true;
+            }
         }
 
         private static string QuoteArgument(string arg)

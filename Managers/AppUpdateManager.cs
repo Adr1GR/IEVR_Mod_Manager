@@ -22,6 +22,7 @@ namespace IEVRModManager.Managers
         private static DateTime? _lastRateLimitHit;
         private static readonly TimeSpan RateLimitCooldown = TimeSpan.FromMinutes(5);
         private static string? _pendingUpdateScript;
+        private static bool _disposed = false;
 
         static AppUpdateManager()
         {
@@ -29,6 +30,18 @@ namespace IEVRModManager.Managers
             _httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github.v3+json");
             // Allow redirects for file downloads (GitHub uses redirects for release assets)
             _httpClient.Timeout = TimeSpan.FromMinutes(10); // Increase timeout for large file downloads
+        }
+
+        /// <summary>
+        /// Disposes the static HttpClient instance. Should be called when the application is shutting down.
+        /// </summary>
+        public static void DisposeHttpClient()
+        {
+            if (!_disposed)
+            {
+                _httpClient?.Dispose();
+                _disposed = true;
+            }
         }
 
         /// <summary>

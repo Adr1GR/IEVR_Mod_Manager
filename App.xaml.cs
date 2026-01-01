@@ -102,6 +102,10 @@ namespace IEVRModManager
                 "Dark" => "Themes/DarkTheme.xaml",
                 "Christmas" => "Themes/ChristmasTheme.xaml",
                 "Red" => "Themes/RedTheme.xaml",
+                "Blue" => "Themes/BlueTheme.xaml",
+                "Purple" => "Themes/PurpleTheme.xaml",
+                "Pastel" => "Themes/PastelTheme.xaml",
+                "Neon" => "Themes/NeonTheme.xaml",
                 _ => "Themes/DarkTheme.xaml"
             };
             themeDict.Source = new Uri(themePath, UriKind.Relative);
@@ -164,11 +168,17 @@ namespace IEVRModManager
         }
 
         /// <summary>
-        /// Called when the application is shutting down. Flushes and disposes the logger.
+        /// Called when the application is shutting down. Flushes and disposes the logger and HttpClient instances.
         /// </summary>
         /// <param name="e">The exit event arguments.</param>
         protected override void OnExit(ExitEventArgs e)
         {
+            // Dispose HttpClient instances to prevent socket exhaustion
+            // Use fully qualified names to avoid conflicts with WPF Window types
+            IEVRModManager.MainWindow.DisposeHttpClient();
+            IEVRModManager.Managers.AppUpdateManager.DisposeHttpClient();
+            IEVRModManager.Windows.GameBananaBrowserWindow.DisposeHttpClient();
+            
             Helpers.Logger.Instance.Flush();
             Helpers.Logger.Instance.Dispose();
             base.OnExit(e);
